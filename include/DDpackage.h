@@ -174,13 +174,15 @@ namespace dd {
 	    NodePtr getNode();
 
 
-	    Edge multiply2(Edge& x, Edge& y, unsigned short var);
+	    Edge multiply2(Edge& x, Edge& y, unsigned short var, unsigned short start = 0);
 	    ComplexValue innerProduct(Edge x, Edge y, int var);
 	    Edge trace(Edge a, short v, const std::bitset<MAXN>& eliminate);
-	    Edge kronecker2(Edge x, Edge y);
+	    Edge kronecker2(Edge x, Edge y, bool increase_idx = 0);
 
 	    void checkSpecialMatrices(NodePtr p);
-	    Edge& UTlookup(Edge& e);
+	    std::uintptr_t UTkey(const Edge& e) const;
+		Edge& UTlookup(Edge& e, bool assertNotExisiting = false);
+	    void UTdeletion(Edge& e, bool addToAvail = true);
 
 
 	    static inline unsigned long CThash(const Edge& a, const Edge& b, const CTkind which) {
@@ -197,6 +199,7 @@ namespace dd {
 	    static unsigned short TThash(unsigned short n, unsigned short t, const short line[]);
 
 	    unsigned int nodeCount(const Edge& e, std::unordered_set<NodePtr>& v) const;
+		void deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e, std::unordered_set<NodePtr>& nodes);
 	    ComplexValue getVectorElement(Edge e, unsigned long long int element);
 	    ListElementPtr newListElement();
 
@@ -227,17 +230,23 @@ namespace dd {
 	    	return makeNonterminal(v, edge.data(), cached);
 	    };
 	    Edge makeZeroState(unsigned short n);
+		Edge makeZeroState(unsigned short start, unsigned short n);
 	    Edge makeBasisState(unsigned short n, const std::bitset<MAXN>& state);
+	    Edge makeBasisState(unsigned short start, unsigned short n, const std::bitset<MAXN>& state);
 	    Edge makeBasisState(unsigned short n, const std::vector<BasisStates>& state);
+	    Edge makeBasisState(unsigned short start, unsigned short n, const std::vector<BasisStates>& state);
 	    Edge makeIdent(short x, short y);
 	    Edge makeGateDD(const Matrix2x2& mat, unsigned short n, const short *line);
+	    Edge makeGateDD(const Matrix2x2& mat, unsigned short start, unsigned short n, const short *line);
 	    Edge makeGateDD(const std::array<ComplexValue,NEDGE>& mat, unsigned short n, const std::array<short,MAXN>& line);
+    	Edge makeGateDD(const std::array<ComplexValue, NEDGE>& mat, unsigned short start, unsigned short n, const std::array<short, MAXN>& line);
+
 
         Edge CTlookup(const Edge& a, const Edge& b, CTkind which);
         void CTinsert(const Edge& a, const Edge& b, const Edge& r, CTkind which);
 
 	    // operations on DDs
-	    Edge multiply(Edge x, Edge y);
+	    Edge multiply(Edge x, Edge y, unsigned short start = 0);
 	    Edge add(Edge x, Edge y);
         Edge add2(Edge x, Edge y);
 	    Edge transpose(const Edge& a);
@@ -247,7 +256,7 @@ namespace dd {
 	    ComplexValue trace(Edge a);
 		ComplexValue innerProduct(Edge x, Edge y);
 	    fp fidelity(Edge x, Edge y);
-	    Edge kronecker(Edge x, Edge y);
+	    Edge kronecker(Edge x, Edge y, bool increase_idx = true);
 	    Edge extend(Edge e, unsigned short h = 0, unsigned short l = 0);
 
 	    /// exchange levels i and j of a decision diagram by pointer manipulation.
@@ -293,6 +302,9 @@ namespace dd {
 		 * @return the complex value of the specified element
 		 */
 		ComplexValue getValueByPath(Edge e, std::string elements);
+
+		// deletes edge edge (0 <= i < NEDGE) from all nodes with idx v
+		void deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e);
 
 	    // reference counting and garbage collection
 	    void incRef(Edge& e);

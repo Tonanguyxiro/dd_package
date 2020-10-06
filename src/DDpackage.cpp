@@ -281,11 +281,15 @@ namespace dd {
     }
 
 	Edge Package::makeZeroState(unsigned short n) {
+        return makeZeroState(0, n);
+    }
+
+	Edge Package::makeZeroState(unsigned short start, unsigned short n) {
         Edge f = DDone;
         Edge edges[4];
         edges[1] = edges[2] = edges[3] = DDzero;
 
-        for (short p = 0; p < n; p++) {
+        for (short p = start; p < n + start; p++) {
             edges[0] = f;
 	        f = makeNonterminal(p, edges);
         }
@@ -294,11 +298,15 @@ namespace dd {
 
     // create DD for basis state |q_n-1 q_n-2 ... q1 q0>
     Edge Package::makeBasisState(unsigned short n, const std::bitset<MAXN>& state) {
+        return makeBasisState(0, n, state);    
+    }
+
+    Edge Package::makeBasisState(unsigned short start, unsigned short n, const std::bitset<MAXN>& state) {
 	    Edge f = DDone;
 	    Edge edges[4];
 	    edges[1] = edges[3] = DDzero;
 
-	    for (short p = 0; p < n; ++p) {
+	    for (short p = start; p < n + start; ++p) {
 	    	if (state[p] == 0) {
 	    		edges[0] = f;
 	    		edges[2] = DDzero;
@@ -311,8 +319,12 @@ namespace dd {
 	    return f;
     }
 
-	Edge Package::makeBasisState(unsigned short n, const std::vector<BasisStates>& state) {
-		if (state.size() < n) {
+    Edge Package::makeBasisState(unsigned short n, const std::vector<BasisStates>& state) {
+        return makeBasisState(0, n, state);
+    }
+
+	Edge Package::makeBasisState(unsigned short start, unsigned short n, const std::vector<BasisStates>& state) {
+        if (state.size() < n) {
 			std::cerr << "Insufficient qubit states provided. Requested " << n << ", but received " << state.size() << std::endl;
 			exit(1);
 		}
@@ -357,7 +369,7 @@ namespace dd {
 					break;
 			}
 
-			f = makeNonterminal(static_cast<short>(p), edges);
+			f = makeNonterminal(static_cast<short>(start + p), edges);
 		}
 		return f;
     }
@@ -515,15 +527,7 @@ namespace dd {
         return e;
     }
 
-	//  lookup a node in the unique table for the appropriate variable - if not found insert it
-	//  only normalized nodes shall be stored.
-	Edge& Package::UTlookup(Edge& e) {
-		// there is a unique terminal node
-		if (isTerminal(e)) {
-            return e;
-        }
-        UTlookups++;
-
+    std::uintptr_t Package::UTkey(const Edge& e) const {
         std::uintptr_t key = 0;
         // note hash function shifts pointer values so that order is important
         // suggested by Dr. Nigel Horspool and helps significantly
@@ -533,12 +537,26 @@ namespace dd {
                    + ((std::uintptr_t) (e.p->e[i].w.i) >> (i + 1));
         }
         key = key & HASHMASK;
+        return key;
+    }
 
+	//  lookup a node in the unique table for the appropriate variable - if not found insert it
+	//  only normalized nodes shall be stored.
+	Edge& Package::UTlookup(Edge& e, bool assertNotExisiting) {
+		// there is a unique terminal node
+		if (isTerminal(e)) {
+            return e;
+        }
+        UTlookups++;
+
+        std::uintptr_t key = UTkey(e);
         unsigned short v = e.p->v;
-        NodePtr p = Unique[v][key]; // find pointer to appropriate collision chain
-        while (p != nullptr)    // search for a match
-        {
+        for(NodePtr p = Unique[v][key]; p != nullptr; p = p->next) { // search for a match
+            if(p == e.p) {
+                return e;
+            }
             if (std::memcmp(e.p->e, p->e, NEDGE * sizeof(Edge)) == 0) {
+                assert(!assertNotExisiting);
                 // Match found
                 e.p->next = nodeAvail;    // put node pointed to by e.p on avail chain
                 nodeAvail = e.p;
@@ -551,7 +569,6 @@ namespace dd {
             }
 
             UTcol++;        // record hash collision
-            p = p->next;
         }
         e.p->next = Unique[v][key]; // if end of chain is reached, this is a new node
         Unique[v][key] = e.p;       // add it to front of collision chain
@@ -563,6 +580,36 @@ namespace dd {
         checkSpecialMatrices(e.p);
 
         return e;                // and return
+    }
+
+    void Package::UTdeletion(Edge& e, bool addToAvail) {
+		// there is a unique terminal node
+		if (isTerminal(e)) {
+            return;
+        }
+
+        std::uintptr_t key = UTkey(e);
+        unsigned short v = e.p->v;
+        NodePtr lastp = nullptr;
+        for(NodePtr p = Unique[v][key]; p != nullptr; p = p->next) { // search for a match
+            if (std::memcmp(e.p->e, p->e, NEDGE * sizeof(Edge)) == 0) {
+                // Match found
+                nodecount--;
+                if (lastp == nullptr)
+                    Unique[v][key] = p->next;
+                else
+                    lastp->next = p->next;
+                if(addToAvail) {
+                    p->next = nodeAvail;
+	                nodeAvail = p;
+                } else {
+                    p->next = nullptr;
+                }
+                return;
+            }
+
+            lastp = p;
+        }
     }
 
     // set compute table to empty and
@@ -746,6 +793,39 @@ namespace dd {
         visited.clear();
         return nodeCount(e, visited);
     }
+
+	void Package::deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e, std::unordered_set<NodePtr>& nodes) {
+        nodes.insert(e.p);
+
+        if (!isTerminal(e)) {
+            if(e.p->v == v) {
+                int oldref = e.p->ref;
+                NodePtr oldp = e.p;
+
+                UTdeletion(e, false);
+                //decRef(e.p->e[edgeIdx]);
+                e.p->e[edgeIdx] = DDzero;
+                UTlookup(e);
+
+                if(oldp != e.p) {
+                    std::cout << "Edge was already stored: " << oldp->v << " == " << e.p->v << std::endl;
+                    e.p->ref += oldref;
+                }
+            }
+
+            for (auto & edge : e.p->e) {
+                if (edge.p != nullptr && !nodes.count(edge.p)) {
+                    deleteEdge(v, edgeIdx, edge, nodes);
+                }
+            }
+        }
+    }
+
+    void Package::deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e) {
+        std::unordered_set<NodePtr> nodes;
+        deleteEdge(v, edgeIdx, e, nodes);
+    }
+    
 
 	Edge Package::CTlookup(const Edge& a, const Edge& b, const CTkind which) {
     // Lookup a computation in the compute table
@@ -1067,7 +1147,7 @@ namespace dd {
 
     // new multiply routine designed to handle missing variables properly
     // var is number of variables
-    Edge Package::multiply2(Edge& x, Edge& y, unsigned short var) {
+    Edge Package::multiply2(Edge& x, Edge& y, unsigned short var, unsigned short start) {
         if (x.p == nullptr)
             return x;
         if (y.p == nullptr)
@@ -1079,7 +1159,7 @@ namespace dd {
             return DDzero;
         }
 
-        if (var == 0) {
+        if (var == start) {
 	        return makeTerminal(cn.mulCached(x.w, y.w));
         }
 
@@ -1106,7 +1186,7 @@ namespace dd {
         if (x.p->v == w && x.p->v == y.p->v) {
             if (x.p->ident) {
             	if (y.p->ident) {
-            		r = makeIdent(0, w);
+            		r = makeIdent(start, w);
             	} else {
                     r = y;
 	            }
@@ -1147,7 +1227,7 @@ namespace dd {
                         e2 = y;
                     }
 
-                    Edge m = multiply2(e1, e2, var - 1);
+                    Edge m = multiply2(e1, e2, var - 1, start);
 
                     if (k == 0 || e[i + j].w == CN::ZERO) {
                         e[i + j] = m;
@@ -1182,7 +1262,7 @@ namespace dd {
         return r;
     }
 
-    Edge Package::multiply(Edge x, Edge y) {
+    Edge Package::multiply(Edge x, Edge y, unsigned short start) {
         const auto before = cn.cacheCount;
         unsigned short var = 0;
         if (!isTerminal(x) && (invVarOrder[x.p->v] + 1) > var) {
@@ -1192,7 +1272,7 @@ namespace dd {
             var = invVarOrder[y.p->v] + 1;
         }
 
-        Edge e = multiply2(x, y, var);
+        Edge e = multiply2(x, y, var, start);
 
         if (e.w != ComplexNumbers::ZERO && e.w != ComplexNumbers::ONE) {
 	        cn.releaseCached(e.w);
@@ -1286,6 +1366,10 @@ namespace dd {
     // 0...1 indicates a control by that value
     // 2 indicates the line is the target
     Edge Package::makeGateDD(const Matrix2x2& mat, unsigned short n, const short *line) {
+        return makeGateDD(mat, 0, n, line);
+    }
+
+    Edge Package::makeGateDD(const Matrix2x2& mat, unsigned short start, unsigned short n, const short *line) {
         Edge em[NEDGE], fm[NEDGE];
         short w = 0, z = 0;
 
@@ -1301,7 +1385,7 @@ namespace dd {
 
         Edge e = DDone;
 	    Edge f{};
-        for (z = 0; line[w = varOrder[z]] < RADIX; z++) { //process lines below target
+        for (z = start; line[w = varOrder[z]] < RADIX; z++) { //process lines below target
             if (line[w] >= 0) { //  control line below target in DD
                 for (int i1 = 0; i1 < RADIX; i1++) {
                     for (int i2 = 0; i2 < RADIX; i2++) {
@@ -1342,12 +1426,12 @@ namespace dd {
 		            edge = makeNonterminal(w, fm);
                 }
             }
-            e = makeIdent(0, z);
+            e = makeIdent(start, z);
         }
 	    e = makeNonterminal(varOrder[z], em);  // target line
-        for (z++; z < n; z++) { // go through lines above target
+        for (z++; z < n + start; z++) { // go through lines above target
             if (line[w = varOrder[z]] >= 0) { //  control line above target in DD
-                Edge temp = makeIdent(0, static_cast<short>(z - 1));
+                Edge temp = makeIdent(start, static_cast<short>(z - 1));
                 for (int i = 0; i < RADIX; i++) {
                     for (int j = 0; j < RADIX; j++) {
                         if (i == j) {
@@ -1379,6 +1463,10 @@ namespace dd {
     }
 
 	Edge Package::makeGateDD(const std::array<ComplexValue, NEDGE>& mat, unsigned short n, const std::array<short, MAXN>& line) {
+        return makeGateDD(mat, 0, n, line);
+    }
+
+    Edge Package::makeGateDD(const std::array<ComplexValue, NEDGE>& mat, unsigned short start, unsigned short n, const std::array<short, MAXN>& line) {
 		std::array<Edge, NEDGE> em{ };
 		short w = 0, z = 0;
 
@@ -1391,14 +1479,14 @@ namespace dd {
 		}
 
 		//process lines below target
-		for (z = 0; line[w = varOrder.at(z)] < RADIX; z++) {
+		for (z = start; line[w = varOrder.at(z)] < RADIX; z++) {
 			for (int i1 = 0; i1 < RADIX; i1++) {
 				for (int i2 = 0; i2 < RADIX; i2++) {
 					int i = i1 * RADIX + i2;
 					if (line[w] == 0) { // neg. control
-						em[i] = makeNonterminal(w, { em[i], DDzero, DDzero, (i1 == i2) ? makeIdent(0, static_cast<short>(z - 1)) : DDzero });
+						em[i] = makeNonterminal(w, { em[i], DDzero, DDzero, (i1 == i2) ? makeIdent(start, static_cast<short>(z - 1)) : DDzero });
 					} else if (line[w] == 1) { // pos. control
-						em[i] = makeNonterminal(w, { (i1 == i2) ? makeIdent(0, static_cast<short>(z - 1)) : DDzero, DDzero, DDzero, em[i] });
+						em[i] = makeNonterminal(w, { (i1 == i2) ? makeIdent(start, static_cast<short>(z - 1)) : DDzero, DDzero, DDzero, em[i] });
 					} else { // not connected
 						em[i] = makeNonterminal(w, { em[i], DDzero, DDzero, em[i] });
 					}
@@ -1410,12 +1498,12 @@ namespace dd {
 		Edge e = makeNonterminal(varOrder[z], em);
 
 		//process lines above target
-		for (z++; z < n; z++) {
+		for (z++; z < n + start; z++) {
 			w = varOrder[z];
 			if (line[w] == 0) { //  neg. control
-				e = makeNonterminal(w, { e, DDzero, DDzero, makeIdent(0, static_cast<short>(z - 1)) });
+				e = makeNonterminal(w, { e, DDzero, DDzero, makeIdent(start, static_cast<short>(z - 1)) });
 			} else if (line[w] == 1) { // pos. control
-				e = makeNonterminal(w, { makeIdent(0, static_cast<short>(z - 1)), DDzero, DDzero, e });
+				e = makeNonterminal(w, { makeIdent(start, static_cast<short>(z - 1)), DDzero, DDzero, e });
 			} else { // not connected
 				e = makeNonterminal(w, { e, DDzero, DDzero, e });
 			}
@@ -1537,8 +1625,8 @@ namespace dd {
         return fid.r*fid.r + fid.i*fid.i;
     }
 
-    Edge Package::kronecker(Edge x, Edge y) {
-	    Edge e = kronecker2(x, y);
+    Edge Package::kronecker(Edge x, Edge y, bool increase_idx) {
+	    Edge e = kronecker2(x, y, increase_idx);
 
 	    if (e.w != CN::ZERO && e.w != CN::ONE) {
 		    cn.releaseCached(e.w);
@@ -1548,8 +1636,7 @@ namespace dd {
 	    return e;
     }
 
-	Edge Package::kronecker2(Edge x, Edge y) {
-
+	Edge Package::kronecker2(Edge x, Edge y, bool increase_idx) {
 		if (CN::equalsZero(x.w))
 			return DDzero;
 
@@ -1561,29 +1648,29 @@ namespace dd {
 			return r;
 		}
 
-    	Edge r = CTlookup(x,y,kron);
+    	Edge r = CTlookup(x, y, kron); // TODO consider increase_idx
     	if (r.p != nullptr)
 		    return r;
 
     	if (x.p->ident) {
-			r = makeNonterminal(static_cast<short>(y.p->v+1), {y, DDzero, DDzero, y});
+			r = makeNonterminal(static_cast<short>(increase_idx ? y.p->v+1 : y.p->v), {y, DDzero, DDzero, y});
 			for (int i = 0; i < x.p->v; ++i) {
-				r = makeNonterminal(static_cast<short>(r.p->v+1), {r, DDzero, DDzero, r});
+				r = makeNonterminal(static_cast<short>(increase_idx ? r.p->v+1 : r.p->v), {r, DDzero, DDzero, r});
 			}
 
 			r.w = cn.getCachedComplex(CN::val(y.w.r),CN::val(y.w.i));
-		    CTinsert(x,y,r, kron);
+		    CTinsert(x, y, r, kron);
 		    return r;
     	}
 
-		Edge e0 = kronecker2(x.p->e[0],y);
-		Edge e1 = kronecker2(x.p->e[1],y);
-		Edge e2 = kronecker2(x.p->e[2],y);
-		Edge e3 = kronecker2(x.p->e[3],y);
+		Edge e0 = kronecker2(x.p->e[0], y, increase_idx);
+		Edge e1 = kronecker2(x.p->e[1], y, increase_idx);
+		Edge e2 = kronecker2(x.p->e[2], y, increase_idx);
+		Edge e3 = kronecker2(x.p->e[3], y, increase_idx);
 
-		r = makeNonterminal(static_cast<short>(y.p->v+x.p->v+1), {e0, e1, e2, e3}, true);
+		r = makeNonterminal(static_cast<short>(increase_idx ? y.p->v+x.p->v+1 : y.p->v+x.p->v), {e0, e1, e2, e3}, true);
 	    CN::mul(r.w, r.w, x.w);
-		CTinsert(x,y,r,kron);
+		CTinsert(x, y, r, kron); // TODO consider increase_idx
 		return r;
     }
 
