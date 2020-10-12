@@ -1668,7 +1668,7 @@ namespace dd {
 		Edge e2 = kronecker2(x.p->e[2], y, increase_idx);
 		Edge e3 = kronecker2(x.p->e[3], y, increase_idx);
 
-		r = makeNonterminal(static_cast<short>(increase_idx ? y.p->v+x.p->v+1 : y.p->v+x.p->v), {e0, e1, e2, e3}, true);
+		r = makeNonterminal(static_cast<short>(increase_idx ? y.p->v+x.p->v+1 : x.p->v), {e0, e1, e2, e3}, true);
 	    CN::mul(r.w, r.w, x.w);
 		CTinsert(x, y, r, kron); // TODO consider increase_idx
 		return r;
