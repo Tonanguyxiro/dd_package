@@ -16,6 +16,7 @@
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <unordered_map> 
 #include <queue>
 #include <set>
 
@@ -199,7 +200,7 @@ namespace dd {
 	    static unsigned short TThash(unsigned short n, unsigned short t, const short line[]);
 
 	    unsigned int nodeCount(const Edge& e, std::unordered_set<NodePtr>& v) const;
-		void deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e, std::unordered_set<NodePtr>& nodes);
+		Edge deleteEdge(const Edge& e, unsigned short v, unsigned short edgeIdx, std::unordered_map<NodePtr, Edge>& nodes);
 	    ComplexValue getVectorElement(Edge e, unsigned long long int element);
 	    ListElementPtr newListElement();
 
@@ -213,8 +214,6 @@ namespace dd {
         ComplexNumbers cn;
         std::array<unsigned short, MAXN> varOrder{ };    // variable order initially 0,1,... from bottom up | Usage: varOrder[level] := varible at a certain level
         std::array<unsigned short, MAXN> invVarOrder{ };// inverse of variable order (inverse permutation) | Usage: invVarOrder[variable] := level of a certain variable
-
-
 
         Package();
         ~Package();
@@ -303,8 +302,8 @@ namespace dd {
 		 */
 		ComplexValue getValueByPath(Edge e, std::string elements);
 
-		// deletes edge edge (0 <= i < NEDGE) from all nodes with idx v
-		void deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e);
+		// deletes edge edge (0 <= i < NEDGE) from all nodes with idx v and creates new tree
+		Edge deleteEdge(const Edge& e, unsigned short v, unsigned short edgeIdx);
 
 	    // reference counting and garbage collection
 	    void incRef(Edge& e);
@@ -342,6 +341,10 @@ namespace dd {
 
 	    // debugging - not normally used
 	    void debugnode(NodePtr p) const;
+
+		void getAllAmplitudes(Edge& e, std::map<std::string, ComplexValue>& amplitudes, int idx, std::string& elements);
+    	bool compareAmplitudes(std::map<std::string, ComplexValue>& ref, std::map<std::string, ComplexValue>& amp, bool print);
+
 	};
 }
 #endif

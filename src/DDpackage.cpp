@@ -794,7 +794,8 @@ namespace dd {
         return nodeCount(e, visited);
     }
 
-	void Package::deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e, std::unordered_set<NodePtr>& nodes) {
+	Edge Package::deleteEdge(const Edge& e, unsigned short v, unsigned short edgeIdx, std::unordered_map<NodePtr, Edge>& nodes) {
+        /*
         nodes.insert(e.p);
 
         if (!isTerminal(e)) {
@@ -819,11 +820,45 @@ namespace dd {
                 }
             }
         }
+        */
+        if(e.p == nullptr || isTerminal(e)) {
+            return e;
+        }
+
+        const auto& nodeit = nodes.find(e.p);
+        Edge newedge{};
+        if(nodeit != nodes.end()) {
+            newedge = nodeit->second;
+        } else {
+            std::array<Edge, NEDGE> edges;
+            if(e.p->v == v) {
+                for (unsigned int i = 0; i < NEDGE; i++) {
+                    edges[i] = i == edgeIdx ? DDzero : e.p->e[i];  // optimization -> node cannot occur below again, since dd is assumed to be free
+                } 
+            } else {
+                for (unsigned int i = 0; i < NEDGE; i++) {
+                    edges[i] = deleteEdge(e.p->e[i], v, edgeIdx, nodes);
+                }
+            }
+
+            newedge = makeNonterminal(e.p->v, edges);
+            nodes[e.p] = newedge;
+        }
+
+        if(CN::equalsOne(newedge.w)) {
+            newedge.w = e.w;
+        } else {
+            Complex w = cn.getTempCachedComplex();
+            cn.mul(w, newedge.w, e.w);
+            newedge.w = cn.lookup(w);
+        }
+
+        return newedge;
     }
 
-    void Package::deleteEdge(unsigned short v, unsigned short edgeIdx, Edge& e) {
-        std::unordered_set<NodePtr> nodes;
-        deleteEdge(v, edgeIdx, e, nodes);
+    Edge Package::deleteEdge(const Edge& e, unsigned short v, unsigned short edgeIdx) {  // Todo edge whould be first argument
+        std::unordered_map<NodePtr, Edge> nodes;
+        return deleteEdge(e, v, edgeIdx, nodes);
     }
     
 
@@ -1055,11 +1090,11 @@ namespace dd {
             if (y.w == CN::ZERO) {
                 return y;
             }
-            y.w = cn.getCachedComplex(y.w.r->val, y.w.i->val);
+            y.w = cn.getCachedComplex(CN::val(y.w.r), CN::val(y.w.i));
             return y;
         }
         if (y.w == CN::ZERO) {
-        	x.w = cn.getCachedComplex(x.w.r->val, x.w.i->val);
+        	x.w = cn.getCachedComplex(CN::val(x.w.r), CN::val(x.w.i));
             return x;
         }
         if (x.p == y.p) {
@@ -1837,4 +1872,29 @@ namespace dd {
 			}
 		}
 	}
+
+    void Package::getAllAmplitudes(Edge& e, std::map<std::string, ComplexValue>& amplitudes, int idx, std::string& elements) {
+        if(idx < 0) {
+            amplitudes[elements] = getValueByPath(e, elements);
+            return;
+        }
+
+        elements[idx] = '0';
+        getAllAmplitudes(e, amplitudes, idx - 1, elements);
+        elements[idx] = '2';
+        getAllAmplitudes(e, amplitudes, idx - 1, elements);
+        elements[idx] = '0';
+    }
+
+    bool Package::compareAmplitudes(std::map<std::string, ComplexValue>& ref, std::map<std::string, ComplexValue>& amp, bool print) {
+        const fp TOLERANCE = 1e-10;
+        assert(amp.size() == ref.size());
+        bool success = true;
+        for (auto const& it : amp) {
+            if(print) std::cout << it.first << ": " << ref[it.first] << " == " << it.second << std::endl;
+            success = success && fabs(ref[it.first].r - it.second.r) < TOLERANCE && fabs(ref[it.first].i - it.second.i) < TOLERANCE;
+            if(!(fabs(ref[it.first].r - it.second.r) < TOLERANCE && fabs(ref[it.first].i - it.second.i) < TOLERANCE)) std::cout << it.first << ": " << ref[it.first] << " == " << it.second << std::endl;
+        }
+        return success;
+    }
 }
