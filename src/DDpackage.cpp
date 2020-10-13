@@ -646,6 +646,7 @@ namespace dd {
 	    if (!force && nodecount < currentNodeGCLimit && cn.count < currentComplexGCLimit) {
 		    return; // do not collect if below current limits
 	    }
+        std::cout << "Execute garbage collection " << std::endl;
         gc_runs++;
 
 	    int count = 0;
@@ -1085,7 +1086,6 @@ namespace dd {
             return x;  // column and row vetors
         }
         nOps[ad]++;
-
         if (x.w == CN::ZERO) {
             if (y.w == CN::ZERO) {
                 return y;
@@ -1111,6 +1111,8 @@ namespace dd {
         if (r.p != nullptr) {
 	        return r;
         }
+        
+        if(debug_print) std::cout << x.p->v << " + " << y.p->v << std::endl;
 
         short w;
         if (isTerminal(x)) {

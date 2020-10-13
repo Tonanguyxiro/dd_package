@@ -10,6 +10,8 @@
 #include "DDpackage.h"
 
 namespace dd {
+	constexpr char SERIALIZATION_VERSION[] = "0.1";
+
 	struct RGB {
 		fp R=0., G=0., B=0.;
 		RGB(fp R, fp G, fp B): R(R), G(G), B(B) {};
@@ -34,8 +36,7 @@ namespace dd {
 	RGB colorFromPhase(const Complex& a);
 	fp thicknessFromMagnitude (const Complex& a);
 
-	std::ostream& header(const Edge& e, std::ostream& os, bool edgeLabels);
-	std::ostream& coloredHeader(const Edge& e, std::ostream& os, bool edgeLabels);
+	std::ostream& header(const Edge& e, std::ostream& os, bool edgeLabels, bool colored = false);
 
 	std::ostream& matrixNodeMatrixAndXlabel(const Edge& e, std::ostream& os);
 	std::ostream& matrixNodeMiddleVar(const Edge& e, std::ostream& os);
@@ -45,14 +46,16 @@ namespace dd {
 	std::ostream& vectorNodeVectorLook(const Edge& e, std::ostream& os);
 	std::ostream& classicVectorNode(const Edge& e, std::ostream& os);
 
-	std::ostream& matrixEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels=false, bool classic=false);
+	std::ostream& matrixEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels=false, bool classic=false, bool colored=false);
 	std::ostream& coloredMatrixEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels=false, bool classic=false);
 
-	std::ostream& vectorEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels=false, bool classic=false);
-	std::ostream& coloredVectorEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels=false, bool classic=false);
+	std::ostream& vectorEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels=false, bool classic=false, bool colored=false);
 
 	void toDot(const Edge& e, std::ostream& os, bool isVector = false, bool colored=true, bool edgeLabels=false, bool classic=false);
 	void export2Dot(Edge basic, const std::string& outputFilename, bool isVector = false, bool colored=true, bool edgeLabels=false, bool classic=false, bool show = true);
+
+	void serialize(Edge basic, const std::string& outputFilename, bool isVector = false);
+	dd::Edge deserialize(const std::string& inputFilename);
 }
 
 

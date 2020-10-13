@@ -6,49 +6,30 @@
 #include "DDexport.h"
 
 namespace dd {
-	std::ostream& header(const Edge& e, std::ostream& os, bool edgeLabels) {
+	std::ostream& header(const Edge& e, std::ostream& os, bool edgeLabels, bool colored) {
 		os << "digraph \"DD\" {graph[];node[shape=plain];edge[arrowhead=none]\n";
 		os << "root [label=\"\",shape=point,style=invis]\n";
 		os << "t [label=<<font point-size=\"20\">1</font>>,shape=box,tooltip=\"1\",width=0.3,height=0.3]\n";
+		
 		auto toplabel = ((uintptr_t)e.p & 0x001fffffu) >> 1u;
 		auto mag = thicknessFromMagnitude(e.w);
+		
 		os << "root->";
 		if (dd::Package::isTerminal(e)) {
 			os << "t";
 		} else {
 			os << toplabel;
 		}
-		os<< "[penwidth=\"" << mag <<  "\",tooltip=\"" << e.w << "\"";
-		if (!CN::equalsOne(e.w)) {
+		os << "[penwidth=\"" << mag <<  "\",tooltip=\"" << e.w << "\"";
+		if(colored) {
+			os << ",color=\"#" << colorFromPhase(e.w) << "\"";
+		} else if (!CN::equalsOne(e.w)) {
 			os << ",style=dashed";
 		}
 		if (edgeLabels) {
 		    os << ",label=<<font point-size=\"8\">&nbsp;" << e.w << "</font>>";
 		}
 
-		os << "]\n";
-
-		return os;
-	}
-
-	std::ostream& coloredHeader(const Edge& e, std::ostream& os, bool edgeLabels) {
-		os << "digraph \"DD\" {graph[];node[shape=plain];edge[arrowhead=none]\n";
-		os << "root [label=\"\",shape=point,style=invis]\n";
-		os << "t [label=<<font point-size=\"20\">1</font>>,shape=box,tooltip=\"1\",width=0.3,height=0.3]\n";
-
-		auto toplabel = ((uintptr_t)e.p & 0x001fffffu) >> 1u;
-		auto mag = thicknessFromMagnitude(e.w);
-		auto color = colorFromPhase(e.w);
-		os << "root->";
-		if (dd::Package::isTerminal(e)) {
-			os << "t";
-		} else {
-			os << toplabel;
-		}
-		os << "[penwidth=\"" << mag << "\",tooltip=\"" << e.w << "\",color=\"#" << color << "\"";
-		if (edgeLabels) {
-			os << ",label=<<font point-size=\"8\">&nbsp;" << e.w << "</font>>";
-		}
 		os << "]\n";
 		return os;
 	}
@@ -164,7 +145,7 @@ namespace dd {
 		return os;
 	}
 
-	std::ostream& matrixEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels, bool classic) {
+	std::ostream& matrixEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels, bool classic, bool colored) {
 		auto fromlabel = ((uintptr_t)from.p & 0x001fffffu) >> 1u;
 		auto tolabel = ((uintptr_t)to.p & 0x001fffffu) >> 1u;
 
@@ -189,7 +170,9 @@ namespace dd {
 
 		auto mag = thicknessFromMagnitude(to.w);
 		os << "[penwidth=\"" << mag << "\",tooltip=\"" << to.w << "\"";
-		if (!CN::equalsOne(to.w)) {
+		if(colored) {
+			os << "color=\"#" << colorFromPhase(to.w) << "\"";
+		} else if (!CN::equalsOne(to.w)) {
 			os << ",style=dashed";
 		}
 		if (edgeLabels) {
@@ -200,41 +183,7 @@ namespace dd {
 		return os;
 	}
 
-	std::ostream& coloredMatrixEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels, bool classic) {
-		auto fromlabel = ((uintptr_t)from.p & 0x001fffffu) >> 1u;
-		auto tolabel = ((uintptr_t)to.p & 0x001fffffu) >> 1u;
-
-		os << fromlabel << ":" << idx << ":";
-		if (classic) {
-			if (idx == 0) os << "sw";
-			else if (idx == 1 || idx == 2) os << "s";
-			else os << "se";
-		} else {
-			if (idx == 0) os << "sw";
-			else if (idx == 1) os << "se";
-			else os << 's';
-		}
-		os << "->";
-		if (Package::isTerminal(to)) {
-			os << "t";
-		} else {
-			os << tolabel;
-			if (!classic)
-				os << ":n";
-		}
-
-		auto mag = thicknessFromMagnitude(to.w);
-		auto color = colorFromPhase(to.w);
-		os << "[penwidth=\"" << mag << "\",tooltip=\"" << to.w << "\" color=\"#" << color << "\"";
-		if (edgeLabels) {
-			os << ",label=<<font point-size=\"8\">&nbsp;" << to.w << "</font>>";
-		}
-		os << "]\n";
-
-		return os;
-	}
-
-	std::ostream& vectorEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels, bool classic) {
+	std::ostream& vectorEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels, bool classic, bool colored) {
 		auto fromlabel = ((uintptr_t)from.p & 0x001fffffu) >> 1u;
 		auto tolabel = ((uintptr_t)to.p & 0x001fffffu) >> 1u;
 
@@ -248,32 +197,11 @@ namespace dd {
 
 		auto mag = thicknessFromMagnitude(to.w);
 		os << "[penwidth=\"" << mag << "\",tooltip=\"" << to.w << "\"";
-		if (!CN::equalsOne(to.w)) {
+		if(colored) {
+			os <<  ",color=\"#" << colorFromPhase(to.w) << "\"";
+		} else if (!CN::equalsOne(to.w)) {
 			os << ",style=dashed";
 		}
-		if (edgeLabels) {
-			os << ",label=<<font point-size=\"8\">&nbsp;" << to.w << "</font>>";
-		}
-		os << "]\n";
-
-		return os;
-	}
-
-	std::ostream& coloredVectorEdge(const Edge& from, const Edge& to, short idx, std::ostream& os, bool edgeLabels, bool classic) {
-		auto fromlabel = ((uintptr_t)from.p & 0x001fffffu) >> 1u;
-		auto tolabel = ((uintptr_t)to.p & 0x001fffffu) >> 1u;
-
-		os << fromlabel << ":" << idx << ":";
-		os << (idx == 0 ? "sw" : "se") << "->";
-		if (Package::isTerminal(to)) {
-			os << "t";
-		} else {
-			os << tolabel;
-		}
-
-		auto mag = thicknessFromMagnitude(to.w);
-		auto color = colorFromPhase(to.w);
-		os << "[penwidth=\"" << mag << "\",tooltip=\"" << to.w << "\" color=\"#" << color << "\"";
 		if (edgeLabels) {
 			os << ",label=<<font point-size=\"8\">&nbsp;" << to.w << "</font>>";
 		}
@@ -286,11 +214,7 @@ namespace dd {
 		std::ostringstream oss{};
 		// header, root and terminal declaration
 
-		if (colored) {
-			coloredHeader(e, oss, edgeLabels);
-		} else {
-			header(e, oss, edgeLabels);
-		}
+		header(e, oss, edgeLabels, colored);
 
 		std::unordered_set<NodePtr> nodes{};
 		auto priocmp = [] (const dd::Edge* left, const dd::Edge* right) { return left->p->v < right->p->v; };
@@ -345,17 +269,9 @@ namespace dd {
 				q.push(&edge);
 
 				if (isVector) {
-					if (colored) {
-						coloredVectorEdge(*node, edge, i, oss, edgeLabels, classic);
-					} else {
-						vectorEdge(*node, edge, i, oss, edgeLabels, classic);
-					}
+					vectorEdge(*node, edge, i, oss, edgeLabels, classic, colored);
 				} else {
-					if (colored) {
-						coloredMatrixEdge(*node, edge, i, oss, edgeLabels, classic);
-					} else {
-						matrixEdge(*node, edge, i, oss, edgeLabels, classic);
-					}
+					matrixEdge(*node, edge, i, oss, edgeLabels, classic, colored);
 				}
 			}
 		}
@@ -415,4 +331,63 @@ namespace dd {
 		return 3.0*std::max(CN::mag(a), 0.10);
 	}
 
+	void serialize(Edge basic, const std::string& outputFilename, bool isVector) {
+		/*
+		std::ofstream init(outputFilename);
+		std::ostringstream oss{};
+		std::unordered_set<NodePtr> nodes{};
+		auto priocmp = [] (const dd::Edge* left, const dd::Edge* right) { return left->p->v < right->p->v; };
+		std::priority_queue<const dd::Edge*, std::vector<const dd::Edge*>, decltype(priocmp)> q(priocmp);
+		q.push(&basic);
+
+		// bfs until finished
+		while (!q.empty()) {
+			auto node = q.top();
+			q.pop();
+
+			// base case
+			if (Package::isTerminal(*node))
+				continue;
+
+			// check if node has already been processed
+			auto ret = nodes.emplace(node->p);
+			if (!ret.second) continue;
+
+			// node definition as HTML-like label (href="javascript:;" is used as workaround to make tooltips work)
+			if (isVector) {
+				vectorNode(*node, oss);
+			} else {
+				matrixNodeMiddleVar(*node, oss);
+			}
+
+			// iterate over edges in reverse to guarantee correct proceossing order
+			for (short i=dd::NEDGE-1; i >= 0; --i) {
+				if (isVector && i % 2 != 0)
+					continue;
+
+				auto& edge = node->p->e[i];
+				if (CN::equalsZero(edge.w)) {
+					continue;
+				}
+
+				// non-zero edge to be included
+				q.push(&edge);
+
+				if (isVector) {
+					vectorEdge(*node, edge, i, oss, edgeLabels, classic, colored);
+				} else {
+					matrixEdge(*node, edge, i, oss, edgeLabels, classic, colored);
+				}
+			}
+		}
+		oss << "}\n";
+
+		init << oss.str() << std::flush;
+		init.close();
+		*/
+	}
+
+	dd::Edge deserialize(const std::string& inputFilename) {
+
+	}
 }

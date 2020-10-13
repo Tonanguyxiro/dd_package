@@ -205,6 +205,7 @@ namespace dd {
 	    ListElementPtr newListElement();
 
     public:
+		bool debug_print = false;
         constexpr static Edge DDone{ terminalNode, ComplexNumbers::ONE };
         constexpr static Edge DDzero{ terminalNode, ComplexNumbers::ZERO };            // edges pointing to zero and one DD constants
         unsigned long activeNodeCount = 0;             // number of active nodes
