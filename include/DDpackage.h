@@ -30,7 +30,7 @@ namespace dd {
 	constexpr unsigned short NEDGE = RADIX * RADIX;   // max no. of edges = RADIX^2
 
 	// General package configuration parameters
-	constexpr unsigned int GCLIMIT1 = 250000;                // first garbage collection limit
+	constexpr unsigned int GCLIMIT1 = 2500000;                // first garbage collection limit
 	constexpr unsigned int GCLIMIT_INC = 0;                  // garbage collection limit increment
 	constexpr unsigned int MAXREFCNT = 4000000;     // max reference count (saturates at this value)
 	constexpr unsigned int NODECOUNT_BUCKETS = 200000;
