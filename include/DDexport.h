@@ -55,7 +55,7 @@ namespace dd {
 	void export2Dot(Edge basic, const std::string& outputFilename, bool isVector = false, bool colored=true, bool edgeLabels=false, bool classic=false, bool show = true);
 
 	void serialize(Edge basic, const std::string& outputFilename, bool isVector = false);
-	dd::Edge deserialize(const std::string& inputFilename);
+	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename);
 }
 
 

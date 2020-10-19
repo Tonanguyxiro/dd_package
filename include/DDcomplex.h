@@ -228,6 +228,8 @@ namespace dd {
         void statistics();
 
 	    int cacheSize() const;
+
+		static std::string toString(Complex& c, bool formatted = true, int precision = -1);
     };
 
 	std::ostream& operator<<(std::ostream& os, const Complex& c);

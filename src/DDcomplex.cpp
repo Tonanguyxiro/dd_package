@@ -4,7 +4,8 @@
  */
 
 #include "DDcomplex.h"
-
+#include <sstream> 
+#include <iomanip>
 namespace dd {
 	ComplexTableEntry ComplexNumbers::zeroEntry{0L, nullptr, 1};
 	ComplexTableEntry ComplexNumbers::oneEntry{1L, nullptr, 1 };
@@ -542,6 +543,48 @@ namespace dd {
 			os << (std::signbit(r) ? "" : "+") << r << "i";
 		} else
 			os << r;
+	}
+
+	std::string ComplexNumbers::toString(Complex& c, bool formatted, int precision) {
+		std::ostringstream ss;
+
+		if(precision >= 0) ss << std::setprecision(precision);
+
+		auto r = ComplexNumbers::val(c.r);
+		auto i = ComplexNumbers::val(c.i);
+
+		if (r != 0) {
+			if(formatted) {
+				ComplexNumbers::printFormattedReal(ss, r);
+			} else {
+				ss << r;
+			}
+		}
+		if (i != 0) {			
+			if(formatted) {
+				if (r == i) {
+					ss << "(1+i)";
+					return ss.str();
+				} else if (i == -r) {
+					ss << "(1-i)";
+					return ss.str();
+				}
+				ComplexNumbers::printFormattedReal(ss, i, true);
+			} else {
+				if(r == 0) {
+					ss << i;
+				} else {
+					if(i > 0) {
+						ss << " + ";
+					}
+					ss << i;
+				}
+				ss << "i";
+			}
+		}
+		if (r == 0 && i == 0) return "0";
+
+		return ss.str();
 	}
 
 	std::ostream& operator<<(std::ostream& os, const Complex& c) {
