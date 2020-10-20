@@ -4,8 +4,8 @@
  */
 
 #include "DDexport.h"
-#include <stack>
 
+#include <stack>
 #include <regex>
 
 namespace dd {
@@ -341,6 +341,7 @@ namespace dd {
 		std::unordered_map<NodePtr, int> node_index{};	
 		
 		oss << SERIALIZATION_VERSION << "\n";
+		oss << CN::toString(basic.w, false, 16) << "\n";
 
 		/* BFS
 		std::unordered_set<NodePtr> nodes{};
@@ -448,6 +449,10 @@ namespace dd {
 				stack.push(node);
 				node = temp;
 			} else {
+				if(node_index.find(node->p) != node_index.end()) {
+					node = nullptr;
+					continue;
+				}
 				node_index[node->p] = next_index;
 				next_index++;
 				oss << node_index[node->p] << " " << node->p->v;
@@ -563,6 +568,16 @@ namespace dd {
 		return newedge;
 	}
 
+	ComplexValue toComplexValue(std::string real_str, std::string imag_str) {
+		fp real = real_str.empty() ? 0 : std::stod(real_str); 
+		
+		imag_str.erase(remove(imag_str.begin(), imag_str.end(), ' '), imag_str.end());
+		imag_str.erase(remove(imag_str.begin(), imag_str.end(), 'i'), imag_str.end());
+		if(imag_str == "+" || imag_str == "-") imag_str = imag_str + "1";
+		fp imag = imag_str.empty() ? 0 : std::stod(imag_str); 
+		return dd::ComplexValue{real, imag};
+	}
+
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename) {
 		auto ifs = std::ifstream(inputFilename);
 		if(!ifs.good()) {
@@ -571,7 +586,8 @@ namespace dd {
 		}
 	
 		std::string version;
-		ifs >> version;
+		std::getline(ifs, version);
+		// ifs >> version;
 		if(strcmp(version.c_str(), SERIALIZATION_VERSION) != 0) {
 			std::cerr << "Wrong Version of serialization file" << std::endl;
 			exit(1);
@@ -581,18 +597,29 @@ namespace dd {
 		std::unordered_map<int, NodePtr> nodes;
 		
 		std::string line;		
-		std::string complex_real_regex = "([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?";
-    	std::string complex_imag_regex = "(?:([+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?)?[iI])?";
-    	std::string edge_regex = " \\(((-?\\d+) (" + complex_real_regex + " ?" + complex_imag_regex + "))?\\)";
-    	std::regex line_regex ("(\\d+) (\\d+)(?:" + edge_regex + ")(?:" + edge_regex + ")(?:" + edge_regex + ")(?:" + edge_regex + ") *#?.*");
+		std::string complex_real_regex = "([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![ \\d\\.]*(?:[eE][+-])?\\d*[iI]))?";
+    	std::string complex_imag_regex = "( ?[+-]? ?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?";
+    	std::string edge_regex = " \\(((-?\\d+) (" + complex_real_regex + complex_imag_regex + "))?\\)";
+		std::regex complex_weight_regex (complex_real_regex + complex_imag_regex);
+    	std::regex line_regex ("(\\d+) (\\d+)(?:" + edge_regex + ")(?:" + edge_regex + ")(?:" + edge_regex + ")(?:" + edge_regex + ") *(?:#.*)?");
     	// std::regex e ("(\\d+) (\\d+)(?:" + edge_regex + "){4} *#.*"); // TODO {4} overwrites groups
 		std::smatch m;
-
+		
+		ComplexValue rootweight;
 		int node_index;
 		int v;
 		std::array<int, dd::NEDGE> edge_indices;
 		edge_indices.fill(-2);
 		std::array<dd::ComplexValue, dd::NEDGE> edge_weights;
+
+		if(std::getline(ifs, line)) {
+			if(!std::regex_match(line, m, complex_weight_regex)) {
+				std::cerr << "Regex did not match second line: " << line << std::endl;
+				exit(1);
+			}
+			rootweight = toComplexValue(m.str(1), m.str(2));
+		}
+		std::cout << "rootweight = " << rootweight << std::endl;
 
 		while (std::getline(ifs, line)) {
 			if (line.empty() || line.size() == 1) continue;
@@ -614,22 +641,25 @@ namespace dd {
 			node_index = std::stoi(m.str(1));
 			v          = std::stoi(m.str(2));
 			 
-			std::cout << "nidx: " << node_index << " v: " << v << std::endl;
+			// std::cout << "nidx: " << node_index << " v: " << v << std::endl;
 			
 			for(int edge_idx = 3, i = 0; i < dd::NEDGE; i++, edge_idx += 5) {
 				if(m.str(edge_idx).empty()) {
-					std::cout << "index " << i << " is empty " << std::endl;
+					// std::cout << "index " << i << " is empty " << std::endl;
 					continue;
 				}
 
 				edge_indices[i] = std::stoi(m.str(edge_idx + 1));
-				fp real = m.str(edge_idx + 3).empty() ? 0 : std::stod(m.str(edge_idx + 3)); 
-				fp imag = m.str(edge_idx + 4).empty() ? 0 : std::stod(m.str(edge_idx + 4)); 
-				edge_weights[i] = dd::ComplexValue{real, imag};
+				edge_weights[i] = toComplexValue(m.str(edge_idx + 3), m.str(edge_idx + 4)); 
 			}
 
 			result = create_deserialized_node(dd, node_index, v, edge_indices, edge_weights, nodes);
 		}
+
+		Complex w = dd->cn.getCachedComplex(rootweight.r, rootweight.i);
+		dd->cn.mul(w, result.w, w);
+		result.w = dd->cn.lookup(w);
+		dd->cn.releaseCached(w);
 
         return result;
 		/*

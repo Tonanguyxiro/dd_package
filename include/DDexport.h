@@ -6,8 +6,9 @@
 #ifndef DDexport_H
 #define DDexport_H
 
-#include <iomanip>
 #include "DDpackage.h"
+
+#include <iomanip>
 
 namespace dd {
 	constexpr char SERIALIZATION_VERSION[] = "0.1";
