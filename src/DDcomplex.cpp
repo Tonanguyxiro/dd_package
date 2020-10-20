@@ -575,7 +575,7 @@ namespace dd {
 					ss << i;
 				} else {
 					if(i > 0) {
-						ss << " + ";
+						ss << "+";
 					}
 					ss << i;
 				}
