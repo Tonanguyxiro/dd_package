@@ -40,6 +40,7 @@ TEST(DDPackageTest, BellState) {
     ASSERT_EQ(dd->getValueByPath(bell_state, "22"), (dd::ComplexValue{dd::SQRT_2, 0}));
 
     ASSERT_DOUBLE_EQ(dd->fidelity(zero_state, bell_state), 0.5);
+    dd->printDD(bell_state, 64);
 }
 
 TEST(DDPackageTest, IdentifyTrace) {
