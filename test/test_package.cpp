@@ -96,19 +96,32 @@ TEST(DDPackageTest, BellStateSerialization) {
     EXPECT_TRUE(dd->equals(bell_state, result));
 }
 
+/* causes internal compiler error for gcc-10
 TEST(DDPackageTest, DeleteFirstEdge) {
     auto dd = std::make_unique<dd::Package>();
 
     dd::Edge zero = dd->makeZeroState(3);
-    /*
     dd::Edge zero_deleted = dd->deleteEdge(zero, 2, 0);
     EXPECT_TRUE(dd->equals(zero_deleted, dd::Package::DDzero));        
     EXPECT_FALSE(dd->equals(zero, zero_deleted));        
-    */    
+    
     short line[3] = {-1, -1, 2};
     dd::Edge h_gate = dd->makeGateDD(Hmat, 3, line);
     dd::Edge hzero = dd->multiply(h_gate, zero);    
     dd::Edge hzero_deleted = dd->deleteEdge(hzero, 2, 0);
     
     EXPECT_TRUE(dd->equals(hzero_deleted.p->e[0], dd::Package::DDzero));    
+}
+*/
+
+TEST(DDPackageTest, UTUnique) {
+    auto dd = std::make_unique<dd::Package>();
+
+    std::array<dd::Edge, dd::NEDGE> edges { {dd::Package::DDone.p, dd->cn.ONE}, {dd::Package::DDzero.p, dd->cn.ZERO}, 
+                                            {dd::Package::DDzero.p, dd->cn.ZERO}, {dd::Package::DDone.p, dd->cn.ONE}};
+    std::array<dd::Edge, dd::NEDGE> edges2 { {dd::Package::DDzero.p, dd->cn.ZERO}, {dd::Package::DDone.p, dd->cn.ONE}, 
+                                            {dd::Package::DDone.p, dd->cn.ONE}, {dd::Package::DDzero.p, dd->cn.ZERO}};
+    dd::Edge zero = dd->makeNonterminal(0, edges);
+    dd::Edge zero2 = dd->makeNonterminal(0, edges);
+    ASSERT_EQ(zero2.p, zero.p);
 }
