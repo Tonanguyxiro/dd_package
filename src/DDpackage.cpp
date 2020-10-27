@@ -646,7 +646,6 @@ namespace dd {
 	    if (!force && nodecount < currentNodeGCLimit && cn.count < currentComplexGCLimit) {
 		    return; // do not collect if below current limits
 	    }
-        std::cout << "Execute garbage collection " << std::endl;
         gc_runs++;
 
 	    int count = 0;
