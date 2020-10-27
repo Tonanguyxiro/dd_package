@@ -87,5 +87,4 @@ TEST(DDComplexTest, ComplexNumberArithmetic) {
 	dd::ComplexNumbers::decRef(d);
 	e = cn.lookup(e);
 	EXPECT_EQ(e, cn.ONE);
-	dd::ComplexNumbers::div(e, dd::ComplexNumbers::ZERO, dd::ComplexNumbers::ONE);
 }
