@@ -117,10 +117,10 @@ TEST(DDPackageTest, DeleteFirstEdge) {
 TEST(DDPackageTest, UTUnique) {
     auto dd = std::make_unique<dd::Package>();
 
-    std::array<dd::Edge, dd::NEDGE> edges { {dd::Package::DDone.p, dd->cn.ONE}, {dd::Package::DDzero.p, dd->cn.ZERO}, 
-                                            {dd::Package::DDzero.p, dd->cn.ZERO}, {dd::Package::DDone.p, dd->cn.ONE}};
-    std::array<dd::Edge, dd::NEDGE> edges2 { {dd::Package::DDzero.p, dd->cn.ZERO}, {dd::Package::DDone.p, dd->cn.ONE}, 
-                                            {dd::Package::DDone.p, dd->cn.ONE}, {dd::Package::DDzero.p, dd->cn.ZERO}};
+    std::array<dd::Edge, dd::NEDGE> edges { dd::Edge{dd::Package::DDone.p, dd->cn.ONE},   dd::Edge{dd::Package::DDzero.p, dd->cn.ZERO}, 
+                                            dd::Edge{dd::Package::DDzero.p, dd->cn.ZERO}, dd::Edge{dd::Package::DDone.p, dd->cn.ONE}};
+    std::array<dd::Edge, dd::NEDGE> edges2 { dd::Edge{dd::Package::DDzero.p, dd->cn.ZERO}, dd::Edge{dd::Package::DDone.p, dd->cn.ONE}, 
+                                             dd::Edge{dd::Package::DDone.p, dd->cn.ONE},   dd::Edge{dd::Package::DDzero.p, dd->cn.ZERO}};
     dd::Edge zero = dd->makeNonterminal(0, edges);
     dd::Edge zero2 = dd->makeNonterminal(0, edges);
     ASSERT_EQ(zero2.p, zero.p);
