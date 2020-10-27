@@ -100,11 +100,11 @@ TEST(DDPackageTest, DeleteFirstEdge) {
     auto dd = std::make_unique<dd::Package>();
 
     dd::Edge zero = dd->makeZeroState(3);
+    /*
     dd::Edge zero_deleted = dd->deleteEdge(zero, 2, 0);
-
     EXPECT_TRUE(dd->equals(zero_deleted, dd::Package::DDzero));        
     EXPECT_FALSE(dd->equals(zero, zero_deleted));        
-          
+    */    
     short line[3] = {-1, -1, 2};
     dd::Edge h_gate = dd->makeGateDD(Hmat, 3, line);
     dd::Edge hzero = dd->multiply(h_gate, zero);    
