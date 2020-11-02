@@ -1089,11 +1089,11 @@ namespace dd {
             if (y.w == CN::ZERO) {
                 return y;
             }
-            y.w = cn.getCachedComplex(y.w.r->val, y.w.i->val);
+            y.w = cn.getCachedComplex(CN::val(y.w.r), CN::val(y.w.i));
             return y;
         }
         if (y.w == CN::ZERO) {
-        	x.w = cn.getCachedComplex(x.w.r->val, x.w.i->val);
+        	x.w = cn.getCachedComplex(CN::val(x.w.r), CN::val(x.w.i));
             return x;
         }
         if (x.p == y.p) {
