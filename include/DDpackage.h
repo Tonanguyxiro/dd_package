@@ -183,7 +183,6 @@ namespace dd {
 	    void checkSpecialMatrices(NodePtr p);
 	    std::uintptr_t UTkey(const Edge& e) const;
 		Edge& UTlookup(Edge& e, bool assertNotExisiting = false);
-	    void UTdeletion(Edge& e, bool addToAvail = true);
 
 
 	    static inline unsigned long CThash(const Edge& a, const Edge& b, const CTkind which) {

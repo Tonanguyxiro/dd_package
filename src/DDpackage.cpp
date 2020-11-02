@@ -581,36 +581,6 @@ namespace dd {
         return e;                // and return
     }
 
-    void Package::UTdeletion(Edge& e, bool addToAvail) {
-		// there is a unique terminal node
-		if (isTerminal(e)) {
-            return;
-        }
-
-        std::uintptr_t key = UTkey(e);
-        unsigned short v = e.p->v;
-        NodePtr lastp = nullptr;
-        for(NodePtr p = Unique[v][key]; p != nullptr; p = p->next) { // search for a match
-            if (std::memcmp(e.p->e, p->e, NEDGE * sizeof(Edge)) == 0) {
-                // Match found
-                nodecount--;
-                if (lastp == nullptr)
-                    Unique[v][key] = p->next;
-                else
-                    lastp->next = p->next;
-                if(addToAvail) {
-                    p->next = nodeAvail;
-	                nodeAvail = p;
-                } else {
-                    p->next = nullptr;
-                }
-                return;
-            }
-
-            lastp = p;
-        }
-    }
-
     // set compute table to empty and
     // set toffoli gate table to empty and
     // set identity table to empty
@@ -794,32 +764,6 @@ namespace dd {
     }
 
 	Edge Package::deleteEdge(const Edge& e, unsigned short v, unsigned short edgeIdx, std::unordered_map<NodePtr, Edge>& nodes) {
-        /*
-        nodes.insert(e.p);
-
-        if (!isTerminal(e)) {
-            if(e.p->v == v) {
-                int oldref = e.p->ref;
-                NodePtr oldp = e.p;
-
-                UTdeletion(e, false);
-                //decRef(e.p->e[edgeIdx]);
-                e.p->e[edgeIdx] = DDzero;
-                UTlookup(e);
-
-                if(oldp != e.p) {
-                    std::cout << "Edge was already stored: " << oldp->v << " == " << e.p->v << std::endl;
-                    e.p->ref += oldref;
-                }
-            }
-
-            for (auto & edge : e.p->e) {
-                if (edge.p != nullptr && !nodes.count(edge.p)) {
-                    deleteEdge(v, edgeIdx, edge, nodes);
-                }
-            }
-        }
-        */
         if(e.p == nullptr || isTerminal(e)) {
             return e;
         }
