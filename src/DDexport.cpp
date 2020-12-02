@@ -401,79 +401,81 @@ namespace dd {
 		// POST ORDER TRAVERSAL USING ONE STACK   https://www.geeksforgeeks.org/iterative-postorder-traversal-using-stack/
 		
 		std::stack<Edge*> stack;
+
 		Edge *node = &basic;
-		do {
-			while(node != nullptr && !Package::isTerminal(*node)) {
-				for (short i=dd::NEDGE-1; i > 0; --i) {
+		if(node != nullptr && !Package::isTerminal(*node)) {
+			do {
+				while(node != nullptr && !Package::isTerminal(*node)) {
+					for (short i=dd::NEDGE-1; i > 0; --i) {
+						if (isVector && i % 2 != 0) {
+							continue;
+						}
+						auto& edge = node->p->e[i];
+						if (Package::isTerminal(edge)) {
+							continue;
+						}
+						if (CN::equalsZero(edge.w)) {
+							continue;
+						}
+						if(node_index.find(edge.p) != node_index.end()) {
+							continue;
+						}
+
+						// non-zero edge to be included
+						stack.push(&edge);
+					}
+					stack.push(node);
+					node = &node->p->e[0];
+				}
+				node = stack.top();
+				stack.pop();
+				
+				bool hasChild = false;
+				for (short i = 1; i < dd::NEDGE && !hasChild; ++i) {
 					if (isVector && i % 2 != 0) {
 						continue;
 					}
 					auto& edge = node->p->e[i];
-					if (Package::isTerminal(edge)) {
-						continue;
-					}
 					if (CN::equalsZero(edge.w)) {
 						continue;
 					}
 					if(node_index.find(edge.p) != node_index.end()) {
 						continue;
 					}
+					hasChild = edge.p == stack.top()->p;
+				}
 
-					// non-zero edge to be included
-					stack.push(&edge);
-				}
-				stack.push(node);
-				node = &node->p->e[0];
-			}
-			node = stack.top();
-			stack.pop();
-			
-			bool hasChild = false;
-			for (short i = 1; i < dd::NEDGE && !hasChild; ++i) {
-				if (isVector && i % 2 != 0) {
-					continue;
-				}
-				auto& edge = node->p->e[i];
-				if (CN::equalsZero(edge.w)) {
-					continue;
-				}
-				if(node_index.find(edge.p) != node_index.end()) {
-					continue;
-				}
-				hasChild = edge.p == stack.top()->p;
-			}
-
-			if(hasChild) {
-				dd::Edge* temp = stack.top();
-				stack.pop();
-				stack.push(node);
-				node = temp;
-			} else {
-				if(node_index.find(node->p) != node_index.end()) {
-					node = nullptr;
-					continue;
-				}
-				node_index[node->p] = next_index;
-				next_index++;
-				oss << node_index[node->p] << " " << node->p->v;
-
-				// iterate over edges in reverse to guarantee correct proceossing order
-				for (short i = 0; i < dd::NEDGE; ++i) {
-					oss << " (";
-					if (isVector || i % 2 == 0) {
-						auto& edge = node->p->e[i];
-						if (!CN::equalsZero(edge.w)) {
-							int edge_idx = Package::isTerminal(edge) ? -1 : node_index[edge.p];			
-							oss << edge_idx << " " << CN::toString(edge.w, false, 16);
-						}
+				if(hasChild) {
+					dd::Edge* temp = stack.top();
+					stack.pop();
+					stack.push(node);
+					node = temp;
+				} else {
+					if(node_index.find(node->p) != node_index.end()) {
+						node = nullptr;
+						continue;
 					}
-					oss << ")";
-				}
-				oss << "\n";
-				node = nullptr;
-			}
-		} while (!stack.empty());
+					node_index[node->p] = next_index;
+					next_index++;
+					oss << node_index[node->p] << " " << node->p->v;
 
+					// iterate over edges in reverse to guarantee correct proceossing order
+					for (short i = 0; i < dd::NEDGE; ++i) {
+						oss << " (";
+						if (isVector || i % 2 == 0) {
+							auto& edge = node->p->e[i];
+							if (!CN::equalsZero(edge.w)) {
+								int edge_idx = Package::isTerminal(edge) ? -1 : node_index[edge.p];			
+								oss << edge_idx << " " << CN::toString(edge.w, false, 16);
+							}
+						}
+						oss << ")";
+					}
+					oss << "\n";
+					node = nullptr;
+				}
+			} while (!stack.empty());
+		}
 		/* POST ORDER TRAVERSAL USING TWO STACKS   https://www.geeksforgeeks.org/iterative-postorder-traversal/
 
 		std::stack<Edge*> stack;

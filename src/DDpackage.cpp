@@ -869,7 +869,7 @@ namespace dd {
     void Package::CTinsert(const Edge& a, const Edge& b, const Edge& r, const CTkind which) {
         if (which == mult || which == fid || which == kron) {
             if (CN::equalsZero(a.w) || CN::equalsZero(b.w)) {
-                std::cerr << "[WARN] CTinsert: Edge with near zero weight a.w=" << a.w << "  b.w=" << b.w << "\n";
+                // std::cerr << "[WARN] CTinsert: Edge with near zero weight a.w=" << a.w << "  b.w=" << b.w << "\n";
             }
             assert(((std::uintptr_t)r.w.r & 1u) == 0 && ((std::uintptr_t)r.w.i & 1u) == 0);
             std::array<CTentry2, CTSLOTS>& table = CTable2.at(mode);
