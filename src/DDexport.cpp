@@ -619,7 +619,7 @@ namespace dd {
 			}
 			rootweight = toComplexValue(m.str(1), m.str(2));
 		}
-		std::cout << "rootweight = " << rootweight << std::endl;
+		// std::cout << "rootweight = " << rootweight << std::endl;
 
 		while (std::getline(ifs, line)) {
 			if (line.empty() || line.size() == 1) continue;

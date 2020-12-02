@@ -171,7 +171,6 @@ namespace dd {
 	    std::unordered_set<NodePtr> visited{NODECOUNT_BUCKETS}; // 2e6
 
 	    /// private helper routines
-	    void initComputeTable();
 	    NodePtr getNode();
 
 
@@ -220,6 +219,7 @@ namespace dd {
 
         void setMode(Mode m) { mode = m; }
         static void setComplexNumberTolerance(fp tol) { CN::setTolerance(tol); }
+	    void initComputeTable();
 
         // DD creation
         static inline Edge makeTerminal(const Complex& w) { return { terminalNode, w }; }
