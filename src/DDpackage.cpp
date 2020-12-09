@@ -1615,7 +1615,7 @@ namespace dd {
     }
 
 	Edge Package::kronecker2(Edge x, Edge y, bool increase_idx) {
-		if (CN::equalsZero(x.w))
+		if (CN::equalsZero(x.w) || CN::equalsZero(y.w))
 			return DDzero;
 
     	nOps[kron]++;
