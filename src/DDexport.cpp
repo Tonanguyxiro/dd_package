@@ -459,7 +459,7 @@ namespace dd {
 					next_index++;
 					oss << node_index[node->p] << " " << node->p->v;
 
-					// iterate over edges in reverse to guarantee correct proceossing order
+					// iterate over edges in reverse to guarantee correct processing order
 					for (short i = 0; i < dd::NEDGE; ++i) {
 						oss << " (";
 						if (isVector || i % 2 == 0) {
@@ -551,7 +551,7 @@ namespace dd {
 			return dd::Package::DDzero;
 		}
 
-		std::array<dd::Edge, dd::NEDGE> edges;
+		std::array<dd::Edge, dd::NEDGE> edges{};
 		for(int i = 0; i < dd::NEDGE; i++) {
 			if(edge_idx[i] == -2) {
 				edges[i] = dd::Package::DDzero;
@@ -570,7 +570,7 @@ namespace dd {
 		return newedge;
 	}
 
-	ComplexValue toComplexValue(std::string real_str, std::string imag_str) {
+	ComplexValue toComplexValue(const std::string& real_str, std::string imag_str) {
 		fp real = real_str.empty() ? 0 : std::stod(real_str); 
 		
 		imag_str.erase(remove(imag_str.begin(), imag_str.end(), ' '), imag_str.end());
@@ -599,20 +599,20 @@ namespace dd {
 		std::unordered_map<int, NodePtr> nodes;
 		
 		std::string line;		
-		std::string complex_real_regex = "([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![ \\d\\.]*(?:[eE][+-])?\\d*[iI]))?";
-    	std::string complex_imag_regex = "( ?[+-]? ?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?";
+		std::string complex_real_regex = R"(([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?(?![ \d\.]*(?:[eE][+-])?\d*[iI]))?)";
+    	std::string complex_imag_regex = R"(( ?[+-]? ?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)?[iI])?)";
     	std::string edge_regex = " \\(((-?\\d+) (" + complex_real_regex + complex_imag_regex + "))?\\)";
 		std::regex complex_weight_regex (complex_real_regex + complex_imag_regex);
     	std::regex line_regex ("(\\d+) (\\d+)(?:" + edge_regex + ")(?:" + edge_regex + ")(?:" + edge_regex + ")(?:" + edge_regex + ") *(?:#.*)?");
     	// std::regex e ("(\\d+) (\\d+)(?:" + edge_regex + "){4} *#.*"); // TODO {4} overwrites groups
 		std::smatch m;
 		
-		ComplexValue rootweight;
+		ComplexValue rootweight{};
 		int node_index;
 		int v;
-		std::array<int, dd::NEDGE> edge_indices;
+		std::array<int, dd::NEDGE> edge_indices{};
 		edge_indices.fill(-2);
-		std::array<dd::ComplexValue, dd::NEDGE> edge_weights;
+		std::array<dd::ComplexValue, dd::NEDGE> edge_weights{};
 
 		if(std::getline(ifs, line)) {
 			if(!std::regex_match(line, m, complex_weight_regex)) {
@@ -659,7 +659,7 @@ namespace dd {
 		}
 
 		Complex w = dd->cn.getCachedComplex(rootweight.r, rootweight.i);
-		dd->cn.mul(w, result.w, w);
+		CN::mul(w, result.w, w);
 		result.w = dd->cn.lookup(w);
 		dd->cn.releaseCached(w);
 
