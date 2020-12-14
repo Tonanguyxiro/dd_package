@@ -110,7 +110,7 @@ TEST(DDPackageTest, BellStateAmplitudes) {
     std::stringstream stream{};
     dd::exportAmplitudes(dd, bell_state, stream);
     
-    std::string amplitudes[] = {"00", "01", "10", "11"};
+    std::string amplitudes[] = {"00", "02", "20", "22"};
     std::map<std::string, dd::ComplexValue> result_amplitudes;
     std::string elements(nqubits, '0');
     dd->getAllAmplitudes(bell_state, result_amplitudes, nqubits - 1, elements);
@@ -120,6 +120,8 @@ TEST(DDPackageTest, BellStateAmplitudes) {
 	std::regex complex_weight_regex (complex_real_regex + complex_imag_regex);
     std::smatch m;
 
+    dd->export2Dot(bell_state, "bell_state", true);
+
     for(unsigned int i = 0; i < 4; i++) {
         std::string line;
         std::getline(stream, line);
@@ -128,7 +130,6 @@ TEST(DDPackageTest, BellStateAmplitudes) {
 
         EXPECT_TRUE(std::regex_match(line, m, complex_weight_regex));
 		dd::ComplexValue amp_exported = dd::toComplexValue(m.str(1), m.str(2));
-        std::cout << amplitudes[i] << ": " << amp << " vs " << amp_exported << std::endl;
         EXPECT_TRUE(fabs(amp_exported.r - amp.r) < CN::TOLERANCE);
         EXPECT_TRUE(fabs(amp_exported.i - amp.i) < CN::TOLERANCE);
     }

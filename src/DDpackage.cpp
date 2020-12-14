@@ -1830,7 +1830,7 @@ namespace dd {
     }
 
     bool Package::compareAmplitudes(std::map<std::string, ComplexValue>& ref, std::map<std::string, ComplexValue>& amp, bool print) {
-        const fp TOLERANCE = 1e-10;
+        const fp TOLERANCE = CN::TOLERANCE;
         assert(amp.size() == ref.size());
         bool success = true;
         for (auto const& it : amp) {

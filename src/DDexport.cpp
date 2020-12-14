@@ -590,7 +590,7 @@ namespace dd {
 		auto ifs = std::ifstream(inputFilename);
 		
 		if(!ifs.good()) {
-			std::cerr << "Wrong Version of serialization file" << std::endl;
+			std::cerr << "Cannot open serialized file: " << inputFilename << std::endl;
 			exit(1);
 		}
 
@@ -721,11 +721,11 @@ namespace dd {
 		*/
 	}
 	
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename) {
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename, unsigned int nqubits) {
 		std::ofstream init(outputFilename);
 		std::ostringstream oss{};
 
-		exportAmplitudes(dd, basic, oss);
+		exportAmplitudes(dd, basic, oss, nqubits);
 
 		init << oss.str() << std::flush;
 		init.close();
@@ -750,28 +750,30 @@ namespace dd {
 		} while (!stack.empty());
 	} */
 
-	void exportAmplitudesRec(const Edge& node, std::ostream& oss, std::string path, Complex& amplitude) {
+	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::ostream& oss, std::string path, Complex& amplitude, unsigned int level) {
 		if(Package::isTerminal(node)) {
-			CN::mul(amplitude, amplitude, node.w);
-			oss << CN::toString(amplitude, false, 16) << "\n";
-			std::cout << "export " << path << ": " << CN::toString(amplitude, false, 16) << std::endl;
-			CN::div(amplitude, amplitude, node.w);
+			Complex amp = dd->cn.getTempCachedComplex();
+			CN::mul(amp, amplitude, node.w);
+			for(int i = 0; i < (1 << level); i++) {
+				oss << CN::toString(amp, false, 16) << "\n";
+			}
+			
 			return;
 		}
 
-		CN::mul(amplitude, amplitude, node.w);
-		exportAmplitudesRec(node.p->e[0], oss, path + "0", amplitude);
-		exportAmplitudesRec(node.p->e[2], oss, path + "1", amplitude);
-		CN::div(amplitude, amplitude, node.w);
+		Complex a = dd->cn.mulCached(amplitude, node.w);
+		exportAmplitudesRec(dd, node.p->e[0], oss, path + "0", a, level - 1);
+		exportAmplitudesRec(dd, node.p->e[2], oss, path + "1", a, level - 1);
+		dd->cn.releaseCached(a);
 	}
 
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss) {
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss, unsigned int nqubits) {
 		if(Package::isTerminal(basic)) {
 			// TODO special treatment
 			return;
 		}
-		Complex weight = dd->cn.getCachedComplex(1, 1);
-		exportAmplitudesRec(basic, oss, "", weight);
+		Complex weight = dd->cn.getCachedComplex(1, 0);
+		exportAmplitudesRec(dd, basic, oss, "", weight, nqubits);
 		dd->cn.releaseCached(weight);
 	}
 }

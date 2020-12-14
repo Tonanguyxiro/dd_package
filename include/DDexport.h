@@ -62,9 +62,9 @@ namespace dd {
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename);
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, std::istream& ifs);
 
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename);
-	void exportAmplitudesRec(const Edge& node, std::ostream& oss, std::string path, Complex& amplitude);
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename, unsigned int nqubits);
+	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::ostream& oss, std::string path, Complex& amplitude, unsigned int level);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss, unsigned int nqubits);
 }
 
 
