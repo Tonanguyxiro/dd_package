@@ -333,16 +333,25 @@ namespace dd {
 	fp thicknessFromMagnitude (const Complex& a) {
 		return 3.0*std::max(CN::mag(a), 0.10);
 	}
+	
 	// 0 1 (1 0.7071067811865476) () () (2 0.7071067811865476+0.8i)
 	void serialize(Edge basic, const std::string& outputFilename, bool isVector) {
-		int next_index = 0;
 		std::ofstream init(outputFilename);
-		std::ostringstream oss{};		
+		std::ostringstream oss{};
+
+		serialize(basic, oss, isVector);
+
+		init << oss.str() << std::flush;
+		init.close();
+	}
+
+	void serialize(Edge basic, std::ostream& oss, bool isVector) {
+		int next_index = 0;		
 		std::unordered_map<NodePtr, int> node_index{};	
 		
 		oss << SERIALIZATION_VERSION << "\n";
 		oss << CN::toString(basic.w, false, 16) << "\n";
-
+ 
 		/* BFS
 		std::unordered_set<NodePtr> nodes{};
 		auto priocmp = [] (const dd::Edge* left, const dd::Edge* right) { return left->p->v < right->p->v; };
@@ -540,9 +549,6 @@ namespace dd {
 			}
 		}		
 		*/
-
-		init << oss.str() << std::flush;
-		init.close();
 	}
 
 	dd::Edge create_deserialized_node(std::unique_ptr<dd::Package>& dd, int index, int v, std::array<int, dd::NEDGE>& edge_idx, 
@@ -582,16 +588,21 @@ namespace dd {
 
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename) {
 		auto ifs = std::ifstream(inputFilename);
+		
 		if(!ifs.good()) {
 			std::cerr << "Wrong Version of serialization file" << std::endl;
 			exit(1);
 		}
-	
+
+		return deserialize(dd, ifs);
+	}
+
+	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, std::istream& ifs) {
 		std::string version;
 		std::getline(ifs, version);
 		// ifs >> version;
 		if(strcmp(version.c_str(), SERIALIZATION_VERSION) != 0) {
-			std::cerr << "Wrong Version of serialization file" << std::endl;
+			std::cerr << "Wrong Version of serialization file version: " << version << std::endl;
 			exit(1);
 		}
 		
