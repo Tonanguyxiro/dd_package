@@ -412,7 +412,7 @@ namespace dd {
 		std::stack<Edge*> stack;
 
 		Edge *node = &basic;
-		if(node != nullptr && !Package::isTerminal(*node)) {
+		if(!Package::isTerminal(*node)) {
 			do {
 				while(node != nullptr && !Package::isTerminal(*node)) {
 					for (short i=dd::NEDGE-1; i > 0; --i) {
@@ -719,5 +719,59 @@ namespace dd {
 		std::cout << "last create" << std::endl;
 		return create_deserialized_node(dd, index, v, edge_idx, edge_weight, nodes);
 		*/
+	}
+	
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename) {
+		std::ofstream init(outputFilename);
+		std::ostringstream oss{};
+
+		exportAmplitudes(dd, basic, oss);
+
+		init << oss.str() << std::flush;
+		init.close();
+	}
+
+	/*
+	void writeAmplitudes(Edge basic, std::ostream& oss) {
+		std::stack<std::tuple<Edge*, std::string, ComplexValue>> stack;
+		
+		Edge *node = &basic;
+		if(!Package::isTerminal(*node)) {
+			// TODO special treatment
+			return;
+		}
+
+		stack.push(std::make_tuple(node, std::string(""), ComplexValue{1, 1}));
+		do {
+			auto tuple = stack.top();
+			stack.pop();
+
+
+		} while (!stack.empty());
+	} */
+
+	void exportAmplitudesRec(const Edge& node, std::ostream& oss, std::string path, Complex& amplitude) {
+		if(Package::isTerminal(node)) {
+			CN::mul(amplitude, amplitude, node.w);
+			oss << CN::toString(amplitude, false, 16) << "\n";
+			std::cout << "export " << path << ": " << CN::toString(amplitude, false, 16) << std::endl;
+			CN::div(amplitude, amplitude, node.w);
+			return;
+		}
+
+		CN::mul(amplitude, amplitude, node.w);
+		exportAmplitudesRec(node.p->e[0], oss, path + "0", amplitude);
+		exportAmplitudesRec(node.p->e[2], oss, path + "1", amplitude);
+		CN::div(amplitude, amplitude, node.w);
+	}
+
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss) {
+		if(Package::isTerminal(basic)) {
+			// TODO special treatment
+			return;
+		}
+		Complex weight = dd->cn.getCachedComplex(1, 1);
+		exportAmplitudesRec(basic, oss, "", weight);
+		dd->cn.releaseCached(weight);
 	}
 }

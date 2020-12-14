@@ -96,6 +96,44 @@ TEST(DDPackageTest, BellStateSerialization) {
     EXPECT_TRUE(dd->equals(bell_state, result));
 }
 
+TEST(DDPackageTest, BellStateAmplitudes) {
+    auto dd = std::make_unique<dd::Package>();
+    unsigned short nqubits = 2;
+
+    short line[2] = {-1, 2};
+    dd::Edge h_gate = dd->makeGateDD(Hmat, 2, line);
+    dd::Edge cx_gate = dd->makeGateDD({Xmat[0][0], Xmat[0][1], Xmat[1][0], Xmat[1][1]}, 2, {2,1});
+    dd::Edge zero_state = dd->makeZeroState(2);
+
+    dd::Edge bell_state = dd->multiply(dd->multiply(cx_gate, h_gate), zero_state);
+
+    std::stringstream stream{};
+    dd::exportAmplitudes(dd, bell_state, stream);
+    
+    std::string amplitudes[] = {"00", "01", "10", "11"};
+    std::map<std::string, dd::ComplexValue> result_amplitudes;
+    std::string elements(nqubits, '0');
+    dd->getAllAmplitudes(bell_state, result_amplitudes, nqubits - 1, elements);
+
+	std::string complex_real_regex = R"(([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?(?![ \d\.]*(?:[eE][+-])?\d*[iI]))?)";
+    std::string complex_imag_regex = R"(( ?[+-]? ?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)?[iI])?)";
+	std::regex complex_weight_regex (complex_real_regex + complex_imag_regex);
+    std::smatch m;
+
+    for(unsigned int i = 0; i < 4; i++) {
+        std::string line;
+        std::getline(stream, line);
+        dd::ComplexValue amp = result_amplitudes[amplitudes[i]];
+        std::regex_match(line, m, complex_weight_regex);
+
+        EXPECT_TRUE(std::regex_match(line, m, complex_weight_regex));
+		dd::ComplexValue amp_exported = dd::toComplexValue(m.str(1), m.str(2));
+        std::cout << amplitudes[i] << ": " << amp << " vs " << amp_exported << std::endl;
+        EXPECT_TRUE(fabs(amp_exported.r - amp.r) < CN::TOLERANCE);
+        EXPECT_TRUE(fabs(amp_exported.i - amp.i) < CN::TOLERANCE);
+    }
+}
+
 /* causes internal compiler error for gcc-10
 TEST(DDPackageTest, DeleteFirstEdge) {
     auto dd = std::make_unique<dd::Package>();

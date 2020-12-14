@@ -55,10 +55,16 @@ namespace dd {
 	void toDot(const Edge& e, std::ostream& os, bool isVector = false, bool colored=true, bool edgeLabels=false, bool classic=false);
 	void export2Dot(Edge basic, const std::string& outputFilename, bool isVector = false, bool colored=true, bool edgeLabels=false, bool classic=false, bool show = true);
 
+	ComplexValue toComplexValue(const std::string& real_str, std::string imag_str);
+
 	void serialize(Edge basic, const std::string& outputFilename, bool isVector = false);
 	void serialize(Edge basic, std::ostream& oss, bool isVector = false);
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename);
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, std::istream& ifs);
+
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename);
+	void exportAmplitudesRec(const Edge& node, std::ostream& oss, std::string path, Complex& amplitude);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss);
 }
 
 

@@ -237,7 +237,6 @@ namespace dd {
     };
 
 	std::ostream& operator<<(std::ostream& os, const Complex& c);
-
 	std::ostream& operator<<(std::ostream& os, const ComplexValue& c);
 }
 #endif
