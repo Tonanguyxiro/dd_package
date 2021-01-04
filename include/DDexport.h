@@ -11,7 +11,7 @@
 #include <iomanip>
 
 namespace dd {
-	constexpr char SERIALIZATION_VERSION[] = "0.1";
+	constexpr double SERIALIZATION_VERSION = 0.1;
 
 	struct RGB {
 		fp R=0., G=0., B=0.;
@@ -56,15 +56,21 @@ namespace dd {
 	void export2Dot(Edge basic, const std::string& outputFilename, bool isVector = false, bool colored=true, bool edgeLabels=false, bool classic=false, bool show = true);
 
 	ComplexValue toComplexValue(const std::string& real_str, std::string imag_str);
+	ComplexValue readBinaryAmplitude(std::istream& ifs);
+	void writeBinaryAmplitude(std::ostream& oss, Complex& w);
 
-	void serialize(Edge basic, const std::string& outputFilename, bool isVector = false);
-	void serialize(Edge basic, std::ostream& oss, bool isVector = false);
-	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename);
-	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, std::istream& ifs);
+	void serialize(Edge basic, const std::string& outputFilename, bool isVector = false, bool writeBinary = false);
+	void serialize(Edge basic, std::ostream& oss, bool isVector = false, bool writeBinary = false);
+	// isVector only used if readBinary is true
+	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename, bool readBinary = false, bool isVector = false);
+	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, std::istream& ifs, bool readBinary = false, bool isVector = false);
 
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename, unsigned int nqubits);
-	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::ostream& oss, std::string path, Complex& amplitude, unsigned int level);
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss, unsigned int nqubits);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename, unsigned int nqubits, bool binary = false);
+	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::ostream& oss, std::string path, Complex& amplitude, unsigned int level, bool binary = false);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss, unsigned int nqubits, bool binary = false);
+
+	// moves dd of one package to a new package
+	Edge move(Edge original, std::unique_ptr<dd::Package>& dd);
 }
 
 

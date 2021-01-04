@@ -952,6 +952,7 @@ namespace dd {
         e.p->v = v;
 
         std::memcpy(e.p->e, edge, NEDGE * sizeof(Edge));
+
         e = normalize(e, cached); // normalize it
         e = UTlookup(e);  // look it up in the unique tables
         return e;          // return result
