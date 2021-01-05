@@ -71,6 +71,7 @@ namespace dd {
 
 	// moves dd of one package to a new package
 	Edge move(Edge original, std::unique_ptr<dd::Package>& dd);
+	Edge move_iterative(Edge original, std::unique_ptr<Package>& dd);
 }
 
 

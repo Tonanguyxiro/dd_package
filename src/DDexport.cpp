@@ -859,4 +859,83 @@ namespace dd {
 
 		return root;
 	}
+	
+	Edge move_iterative(Edge original, std::unique_ptr<Package>& dd) {
+		// POST ORDER TRAVERSAL USING ONE STACK   https://www.geeksforgeeks.org/iterative-postorder-traversal-using-stack/
+		Edge root;
+		std::stack<Edge*> stack;
+		std::unordered_map<NodePtr, NodePtr> mapped_node{};
+
+		Edge *node = &original;
+		if(!Package::isTerminal(*node)) {
+			do {
+				while(node != nullptr && !Package::isTerminal(*node)) {
+					for (short i=NEDGE-1; i > 0; --i) {
+						auto& edge = node->p->e[i];
+						if (Package::isTerminal(edge)) {
+							continue;
+						}
+						if (CN::equalsZero(edge.w)) {
+							continue;
+						}
+						if(mapped_node.find(edge.p) != mapped_node.end()) {
+							continue;
+						}
+
+						// non-zero edge to be included
+						stack.push(&edge);
+					}
+					stack.push(node);
+					node = &node->p->e[0];
+				}
+				node = stack.top();
+				stack.pop();
+				
+				bool hasChild = false;
+				for (short i = 1; i < NEDGE && !hasChild; ++i) {
+					auto& edge = node->p->e[i];
+					if (CN::equalsZero(edge.w)) {
+						continue;
+					}
+					if(mapped_node.find(edge.p) != mapped_node.end()) {
+						continue;
+					}
+					hasChild = edge.p == stack.top()->p;
+				}
+
+				if(hasChild) {
+					Edge* temp = stack.top();
+					stack.pop();
+					stack.push(node);
+					node = temp;
+				} else {
+					if(mapped_node.find(node->p) != mapped_node.end()) {
+						node = nullptr;
+						continue;
+					}
+					std::array<Edge, NEDGE> edges{};
+					for (short i = 0; i < NEDGE; i++) {
+						if(Package::isTerminal(node->p->e[i])) {
+							edges[i].p = node->p->e[i].p;
+						} else {
+							edges[i].p = mapped_node[node->p->e[i].p];
+						}
+						edges[i].w = dd->cn.lookup(node->p->e[i].w);
+					}
+					root = dd->makeNonterminal(node->p->v, edges);
+					mapped_node[node->p] = root.p;
+					node = nullptr;
+				}
+			} while (!stack.empty());
+
+			Complex w = dd->cn.getCachedComplex(CN::val(original.w.r), CN::val(original.w.i));
+			CN::mul(w, root.w, w);
+			root.w = dd->cn.lookup(w);
+			dd->cn.releaseCached(w);
+		} else {
+			root.p = original.p;  // terminal -> static
+			root.w = dd->cn.lookup(original.w); 
+		}
+		return root;
+	}
 }
