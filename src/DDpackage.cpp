@@ -757,6 +757,18 @@ namespace dd {
         return sum;
     }
 
+	void Package::pathCount(const Edge& e, unsigned int& npaths) const {
+        for (const auto & edge : e.p->e) {
+            if(isTerminal(edge)) {
+                if(!CN::equalsZero(edge.w)) {
+                    npaths++;
+                }
+            } else {
+                pathCount(edge, npaths);
+            }
+        }
+    }
+
     // counts number of unique nodes in a DD
     unsigned int Package::size(const Edge& e) {
         visited.clear();

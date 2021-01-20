@@ -65,13 +65,28 @@ namespace dd {
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, const std::string& inputFilename, bool readBinary = false, bool isVector = false);
 	dd::Edge deserialize(std::unique_ptr<dd::Package>& dd, std::istream& ifs, bool readBinary = false, bool isVector = false);
 
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, const std::string& outputFilename, unsigned int nqubits, bool binary = false);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, const std::string& outputFilename, unsigned int nqubits, bool binary = false);
 	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::ostream& oss, std::string path, Complex& amplitude, unsigned int level, bool binary = false);
-	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge basic, std::ostream& oss, unsigned int nqubits, bool binary = false);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::ostream& oss, unsigned int nqubits, bool binary = false);
+
+	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx);
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits);
+
+	void addAmplitudesRec(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx);
+	void addAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits);
 
 	// moves dd of one package to a new package
 	Edge move(Edge original, std::unique_ptr<dd::Package>& dd);
 	Edge move_iterative(Edge original, std::unique_ptr<Package>& dd);
+
+
+	struct DDProfilingResult {
+		unsigned int nnodes;
+		unsigned int npaths;
+		unsigned int ncomplexnumbers;
+	};
+
+	DDProfilingResult profileDD(std::istream& ifs, bool readBinary = false, bool isVector = false);
 }
 
 

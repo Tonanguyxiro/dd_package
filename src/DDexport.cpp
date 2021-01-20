@@ -828,16 +828,75 @@ namespace dd {
 		dd->cn.releaseCached(a);
 	}
 
-	void exportAmplitudes(std::unique_ptr<Package>& dd, Edge basic, std::ostream& oss, unsigned int nqubits, bool binary) {
-		if(Package::isTerminal(basic)) {
+	void exportAmplitudes(std::unique_ptr<Package>& dd, Edge node, std::ostream& oss, unsigned int nqubits, bool binary) {
+		if(Package::isTerminal(node)) {
 			// TODO special treatment
 			return;
 		}
 		Complex weight = dd->cn.getCachedComplex(1, 0);
-		exportAmplitudesRec(dd, basic, oss, "", weight, nqubits, binary);
+		exportAmplitudesRec(dd, node, oss, "", weight, nqubits, binary);
 		dd->cn.releaseCached(weight);
 	}
 	
+
+	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx) {
+		if(Package::isTerminal(node)) {
+			Complex amp = dd->cn.getTempCachedComplex();
+			CN::mul(amp, amplitude, node.w);
+			idx <<= level;
+			for(int i = 0; i < (1 << level); i++) {
+				amplitudes[idx++] = dd::ComplexValue{CN::val(amp.r), CN::val(amp.i)};
+			}
+			
+			return;
+		}
+
+		Complex a = dd->cn.mulCached(amplitude, node.w);
+		exportAmplitudesRec(dd, node.p->e[0], amplitudes, a, level - 1, idx << 1);
+		exportAmplitudesRec(dd, node.p->e[2], amplitudes, a, level - 1, (idx << 1) | 1);
+		dd->cn.releaseCached(a);
+	}
+
+	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits) {
+		if(Package::isTerminal(node)) {
+			// TODO special treatment
+			return;
+		}
+		Complex weight = dd->cn.getCachedComplex(1, 0);
+		exportAmplitudesRec(dd, node, amplitudes, weight, nqubits, 0);
+		dd->cn.releaseCached(weight);
+	}
+
+	void addAmplitudesRec(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx) {
+		if(Package::isTerminal(node)) {
+			Complex amp = dd->cn.getTempCachedComplex();
+			CN::mul(amp, amplitude, node.w);
+
+			idx <<= level;
+			for(int i = 0; i < (1 << level); i++) {
+				ComplexValue temp = dd::ComplexValue{CN::val(amp.r) + amplitudes[idx].r, CN::val(amp.i) + amplitudes[idx].i};
+				amplitudes[idx++] = temp;
+			}
+			
+			return;
+		}
+
+		Complex a = dd->cn.mulCached(amplitude, node.w);
+		addAmplitudesRec(dd, node.p->e[0], amplitudes, a, level - 1, idx << 1);
+		addAmplitudesRec(dd, node.p->e[2], amplitudes, a, level - 1, idx << 1 | 1);
+		dd->cn.releaseCached(a);
+	}
+
+	void addAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits) {
+		if(Package::isTerminal(node)) {
+			// TODO special treatment
+			return;
+		}
+		Complex weight = dd->cn.getCachedComplex(1, 0);
+		addAmplitudesRec(dd, node, amplitudes, weight, nqubits, 0);
+		dd->cn.releaseCached(weight);
+	}
+
 	Edge move(Edge original, std::unique_ptr<Package>& dd) {
 		Edge root;
 		if(!Package::isTerminal(original)) {
@@ -937,5 +996,18 @@ namespace dd {
 			root.w = dd->cn.lookup(original.w); 
 		}
 		return root;
+	}	
+
+	DDProfilingResult profileDD(std::istream& ifs, bool readBinary, bool isVector) {         
+        std::unique_ptr<dd::Package> dd = std::make_unique<dd::Package>();
+		dd::Edge edge = deserialize(dd, ifs, readBinary, isVector);
+
+
+		DDProfilingResult result;
+		result.nnodes = dd->nodeCount(edge);
+		result.npaths = dd->pathCount(edge);
+		result.ncomplexnumbers = dd->cn.count;
+
+		return result;
 	}
 }

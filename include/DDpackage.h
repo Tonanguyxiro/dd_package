@@ -198,6 +198,7 @@ namespace dd {
 	    static unsigned short TThash(unsigned short n, unsigned short t, const short line[]);
 
 	    unsigned int nodeCount(const Edge& e, std::unordered_set<NodePtr>& v) const;
+		void pathCount(const Edge& e, unsigned int& npaths) const;
 		Edge deleteEdge(const Edge& e, unsigned short v, unsigned short edgeIdx, std::unordered_map<NodePtr, Edge>& nodes);
 	    ComplexValue getVectorElement(Edge e, unsigned long long int element);
 	    ListElementPtr newListElement();
@@ -338,6 +339,12 @@ namespace dd {
 	    unsigned int nodeCount(const Edge& e) const {
 			std::unordered_set<NodePtr> v;
 			return nodeCount(e, v);
+		}
+
+	    unsigned int pathCount(const Edge& e) const {
+			unsigned int npaths = 0;
+			pathCount(e, npaths);
+			return npaths;
 		}
 
 	    // debugging - not normally used
