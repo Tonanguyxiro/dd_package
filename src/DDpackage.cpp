@@ -763,7 +763,7 @@ namespace dd {
                 if(!CN::equalsZero(edge.w)) {
                     npaths++;
                 }
-            } else {
+            } else if(edge.p != nullptr) {
                 pathCount(edge, npaths);
             }
         }

@@ -58,6 +58,7 @@ namespace dd {
 	ComplexValue toComplexValue(const std::string& real_str, std::string imag_str);
 	ComplexValue readBinaryAmplitude(std::istream& ifs);
 	void writeBinaryAmplitude(std::ostream& oss, Complex& w);
+	void writeBinaryAmplitude(std::ostream& oss, ComplexValue& w);
 
 	void serialize(Edge basic, const std::string& outputFilename, bool isVector = false, bool writeBinary = false);
 	void serialize(Edge basic, std::ostream& oss, bool isVector = false, bool writeBinary = false);
@@ -72,7 +73,7 @@ namespace dd {
 	void exportAmplitudesRec(std::unique_ptr<dd::Package>& dd, const Edge& node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx);
 	void exportAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits);
 
-	void addAmplitudesRec(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx);
+	void addAmplitudesRec(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, ComplexValue& amplitude, unsigned int level, unsigned int idx);
 	void addAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits);
 
 	// moves dd of one package to a new package

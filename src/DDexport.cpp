@@ -352,6 +352,13 @@ namespace dd {
 		oss.write((char*)&temp, sizeof(double));
 	}
 
+	void writeBinaryAmplitude(std::ostream& oss, ComplexValue& w) {
+		double temp = w.r;
+		oss.write((char*)&temp, sizeof(double));
+		temp = w.i;
+		oss.write((char*)&temp, sizeof(double));
+	}
+
 	void serialize(Edge basic, std::ostream& oss, bool isVector, bool writeBinary) {
 		int next_index = 0;		
 		std::unordered_map<NodePtr, int> node_index{};	
@@ -867,7 +874,24 @@ namespace dd {
 		dd->cn.releaseCached(weight);
 	}
 
-	void addAmplitudesRec(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, Complex& amplitude, unsigned int level, unsigned int idx) {
+	void addAmplitudesRec(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, ComplexValue& amplitude, unsigned int level, unsigned int idx) {
+		fp ar = CN::val(node.w.r);
+		fp ai = CN::val(node.w.i);
+		ComplexValue amp {ar * amplitude.r - ai * amplitude.i, ar * amplitude.i + ai * amplitude.r};
+		
+		if(Package::isTerminal(node)) {
+			idx <<= level;
+			for(int i = 0; i < (1 << level); i++) {
+				ComplexValue temp = dd::ComplexValue{amp.r + amplitudes[idx].r, amp.i + amplitudes[idx].i};
+				amplitudes[idx++] = temp;
+			}
+			
+			return;
+		}		
+
+		addAmplitudesRec(dd, node.p->e[0], amplitudes, amp, level - 1, idx << 1);
+		addAmplitudesRec(dd, node.p->e[2], amplitudes, amp, level - 1, idx << 1 | 1);
+		/*
 		if(Package::isTerminal(node)) {
 			Complex amp = dd->cn.getTempCachedComplex();
 			CN::mul(amp, amplitude, node.w);
@@ -880,11 +904,11 @@ namespace dd {
 			
 			return;
 		}
-
 		Complex a = dd->cn.mulCached(amplitude, node.w);
 		addAmplitudesRec(dd, node.p->e[0], amplitudes, a, level - 1, idx << 1);
 		addAmplitudesRec(dd, node.p->e[2], amplitudes, a, level - 1, idx << 1 | 1);
 		dd->cn.releaseCached(a);
+		*/
 	}
 
 	void addAmplitudes(std::unique_ptr<dd::Package>& dd, Edge node, std::vector<ComplexValue>& amplitudes, unsigned int nqubits) {
@@ -892,9 +916,8 @@ namespace dd {
 			// TODO special treatment
 			return;
 		}
-		Complex weight = dd->cn.getCachedComplex(1, 0);
-		addAmplitudesRec(dd, node, amplitudes, weight, nqubits, 0);
-		dd->cn.releaseCached(weight);
+		ComplexValue a{1, 0};
+		addAmplitudesRec(dd, node, amplitudes, a, nqubits, 0);
 	}
 
 	Edge move(Edge original, std::unique_ptr<Package>& dd) {
