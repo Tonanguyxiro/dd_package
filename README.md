@@ -5,7 +5,7 @@
 
 
 # JKQ DD Package - A Package for Decision Diagrams Written in C++
-
+## The test version
 A DD package tailored to quantum computing by the [Institute for Integrated Circuits](http://iic.jku.at/eda/) at the [Johannes Kepler University Linz](https://jku.at). This package is part of the [JKQ toolset](https://github.com/iic-jku/jkq).
 
 Developers: Alwin Zulehner, Stefan Hillmich, Lukas Burgholzer, and Robert Wille
