@@ -2,6 +2,8 @@
 #include <iostream>
 
 // X gate matrix
+// |0+0i 1+0i|
+// |1+0i 0+0i|
 constexpr dd::Matrix2x2 Xmat = {{{ 0, 0 }, { 1, 0 } }, {{ 1, 0 }, { 0, 0 } }};
 // Hadamard gate matrix
 constexpr dd::Matrix2x2 Hmat = {{{ dd::SQRT_2, 0 }, { dd::SQRT_2,  0 }},
@@ -68,6 +70,11 @@ int main() {
     /***** Simulation *****/
     //Generate vector in basis state |00>
     dd::Edge zero_state = dd->makeZeroState(2);
+    std::cout << "zero state:" << "\n";
+    dd->printVector(zero_state);
+    std::cout << "zero state decision diagram:" << "\n";
+    dd->printDD(zero_state, 20);
+    dd->export2Dot(zero_state, "zero_state.dot", true);
 
     //Simulate the bell_circuit with initial state |00>
     dd::Edge bell_state = dd->multiply(bell_circuit1, zero_state);
@@ -91,6 +98,8 @@ int main() {
 
     dd::Edge my_z_gate = dd->makeGateDD(m, 1, line);
 	std::cout << "DD of my gate has size " << dd->size(my_z_gate) << std::endl;
+    dd->printDD(my_z_gate, 20);
+
 
 //	// compute (partial) traces
 //	dd::Edge partTrace = dd->partialTrace(dd->makeIdent(0, 1), std::bitset<dd::MAXN>(2));

@@ -354,6 +354,7 @@ namespace dd {
         void printVector(const Edge& e);
         void printActive(int n);
         void printDD(const Edge& e, unsigned int limit);
+        void printDecisionDiagram(const Edge &e);
         void printUniqueTable(unsigned short n);
 
         void toDot(Edge e, std::ostream& oss, bool isVector = false);

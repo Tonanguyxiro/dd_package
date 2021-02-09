@@ -283,7 +283,7 @@ namespace dd {
         unsigned short n = 0, i = 0;
 
         ListElementPtr first = newListElement();
-        first->p = e.p;
+        first->p = e.p; //the node connect to e
         first->next = nullptr;
         first->w = 0;
 
@@ -291,13 +291,14 @@ namespace dd {
         ListElementPtr pnext = first;
 
         while (pnext != nullptr) {
+            //print the reference count of node p
             std::cout << pnext->p->ref << " ";
-
+            //print the count of the node and the variable value of the non-terminal node
             std::cout << i << " \t|\t(" << pnext->p->v << ") \t";
 
             std::cout << "[";
-            if (pnext->p != DDzero.p) {
-                for (auto const&edge : pnext->p->e) {
+            if (pnext->p != DDzero.p) { //next node is not terminal zero node
+                for (auto const&edge : pnext->p->e) { //for each edges connected to pnext node
                     if (edge.p == nullptr) {
                         std::cout << "NULL ";
                     } else {
@@ -332,5 +333,20 @@ namespace dd {
             }
             pnext = pnext->next;
         }
+    }
+
+    //My method to print Decision Diagram
+    void Package::printDecisionDiagram(const Edge &e){
+        unsigned short n = 0, i = 0;
+
+        ListElementPtr first = newListElement();
+        first->p = e.p;
+        first->next = nullptr;
+        first->w = 0;
+
+        std::cout << "top edge weight " << e.w << "\n";
+        ListElementPtr pnext = first;
+
+
     }
 }
